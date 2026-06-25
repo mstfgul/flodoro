@@ -71,8 +71,8 @@ export function FlightModeScreen() {
     try {
       const f = await fetchFlightByCallsign(search.trim().toUpperCase());
       if (f) { handleSelect(f); setShowSearch(false); setSearch(''); }
-      else setSearchError(`"${search.toUpperCase()}" bulunamadı`);
-    } catch { setSearchError('Bağlantı hatası.'); }
+      else setSearchError(`"${search.toUpperCase()}" not found`);
+    } catch { setSearchError('Connection error.'); }
     finally { setSearching(false); }
   };
 
@@ -84,14 +84,14 @@ export function FlightModeScreen() {
     const dest = destination || (() => {
       const v = selected.velocity || 230;
       const proj = projectAhead(selected.lat, selected.lon, selected.heading || 0, v, 2);
-      return { city: 'Hedef', code: '—', lat: proj.lat, lon: proj.lon };
+      return { city: 'Destination', code: '—', lat: proj.lat, lon: proj.lon };
     })();
     const originAirport = guessOrigin(selected);
     return {
       mode: 'live', isRealistic, seat,
       origin: originAirport
         ? { city: originAirport.city, code: originAirport.code, lat: selected.lat, lon: selected.lon }
-        : { city: selected.country || 'Bilinmiyor', code: selected.callsign?.slice(0, 3) || '?', lat: selected.lat, lon: selected.lon },
+        : { city: selected.country || 'Unknown', code: selected.callsign?.slice(0, 3) || '?', lat: selected.lat, lon: selected.lon },
       destination: { city: dest.city, code: dest.code || '—', lat: dest.lat, lon: dest.lon },
       duration: isRealistic ? 999 : customDuration,
       flightData: selected,
@@ -193,7 +193,7 @@ export function FlightModeScreen() {
               <input
                 autoFocus
                 type="text"
-                placeholder="Callsign ara: TK1, LH455, BA92…"
+                placeholder="Search callsign: TK1, LH455, BA92…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
@@ -210,7 +210,7 @@ export function FlightModeScreen() {
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
                 style={{ background: 'linear-gradient(135deg, #00b4d8, #0284c7)' }}
               >
-                {searching ? <Loader size={14} className="animate-spin" /> : 'Ara'}
+                {searching ? <Loader size={14} className="animate-spin" /> : 'Search'}
               </button>
             </div>
             {searchError && <p className="px-4 pb-2 text-xs text-amber-400">{searchError}</p>}
@@ -224,7 +224,7 @@ export function FlightModeScreen() {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
               <Loader size={28} className="animate-spin text-[#00b4d8]" />
-              <span className="text-sm text-[#64748b]">Radar taranıyor…</span>
+              <span className="text-sm text-[#64748b]">Scanning radar…</span>
             </div>
           </div>
         ) : (
@@ -240,7 +240,7 @@ export function FlightModeScreen() {
             style={{ background: isDark ? 'rgba(5,8,20,0.85)' : 'rgba(240,248,255,0.92)', border: '1px solid rgba(0,180,216,0.2)', color: isDark ? '#94a3b8' : '#475569' }}
           >
             <span>✈</span>
-            <span>Haritadan bir uçuş seç</span>
+            <span>Select a flight from the map</span>
           </motion.div>
         )}
 
@@ -313,9 +313,9 @@ export function FlightModeScreen() {
               <div className="grid grid-cols-4 gap-px px-5 py-3"
                 style={{ borderBottom: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)' }}>
                 {[
-                  { label: 'İRTİFA', value: altFt ? `${(altFt/1000).toFixed(0)}k ft` : '—', sub: altFt ? `${altFt.toLocaleString()} ft` : '' },
-                  { label: 'HIZ', value: selected.velocity ? `${Math.round(selected.velocity * 3.6)}` : '—', sub: 'km/s' },
-                  { label: 'YÖN', value: selected.heading ? `${Math.round(selected.heading)}°` : '—', sub: headingLabel(selected.heading) },
+                  { label: 'ALT', value: altFt ? `${(altFt/1000).toFixed(0)}k ft` : '—', sub: altFt ? `${altFt.toLocaleString()} ft` : '' },
+                  { label: 'SPD', value: selected.velocity ? `${Math.round(selected.velocity * 3.6)}` : '—', sub: 'km/h' },
+                  { label: 'HDG', value: selected.heading ? `${Math.round(selected.heading)}°` : '—', sub: headingLabel(selected.heading) },
                   { label: 'ICAO', value: selected.icao24?.toUpperCase().slice(0,6), sub: '' },
                 ].map(({ label, value, sub }) => (
                   <div key={label} className="text-center py-2">
@@ -351,10 +351,10 @@ export function FlightModeScreen() {
                   </div>
                   <div>
                     <div className="text-xs font-semibold" style={{ color: isRealistic ? '#22c55e' : isDark ? '#94a3b8' : '#475569' }}>
-                      Realistik Mod
+                      Realistic Mode
                     </div>
                     <div className="text-[10px]" style={{ color: isDark ? '#475569' : '#94a3b8' }}>
-                      {isRealistic ? 'İniş tespiti aktif' : 'Geri sayım modu'}
+                      {isRealistic ? 'Landing detection active' : 'Countdown mode'}
                     </div>
                   </div>
                 </button>
@@ -377,7 +377,7 @@ export function FlightModeScreen() {
                     >
                       {[25,30,45,60,90,120,180].map(m => (
                         <option key={m} value={m} style={{ background: isDark ? '#0d1226' : '#f8fcff' }}>
-                          {m < 60 ? `${m} dk` : `${m/60} sa`}
+                          {m < 60 ? `${m} min` : `${m/60} hr`}
                         </option>
                       ))}
                     </select>
@@ -396,10 +396,10 @@ export function FlightModeScreen() {
                     letterSpacing: '0.05em',
                   }}
                 >
-                  ✈ &nbsp;UÇUŞA BİN
+                  ✈ &nbsp;BOARD FLIGHT
                   {!isRealistic && (
                     <span className="ml-2 text-sm font-normal opacity-80">
-                      — {customDuration < 60 ? `${customDuration} dk` : `${customDuration/60} sa`}
+                      — {customDuration < 60 ? `${customDuration} min` : `${customDuration/60} hr`}
                     </span>
                   )}
                   {destination && (
@@ -417,6 +417,6 @@ export function FlightModeScreen() {
 
 function headingLabel(h) {
   if (h == null) return '';
-  const dirs = ['K','KD','D','GD','G','GB','B','KB'];
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
   return dirs[Math.round(h / 45) % 8];
 }

@@ -1,5 +1,5 @@
 export const airlineThemes = {
-  TK:  { name: 'Türk Hava Yolları', color: '#E81932', accent: '#D4AF37', flag: '🇹🇷' },
+  TK:  { name: 'Turkish Airlines',   color: '#E81932', accent: '#D4AF37', flag: '🇹🇷' },
   LH:  { name: 'Lufthansa',          color: '#05164d', accent: '#f5a623', flag: '🇩🇪' },
   BA:  { name: 'British Airways',    color: '#075AAA', accent: '#EB2226', flag: '🇬🇧' },
   FR:  { name: 'Ryanair',            color: '#073590', accent: '#F7C52B', flag: '🇮🇪' },

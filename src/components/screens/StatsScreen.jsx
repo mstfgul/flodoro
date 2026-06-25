@@ -35,8 +35,8 @@ function BarChart({ data }) {
                 <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block z-10 whitespace-nowrap">
                   <div className="glass border border-white/10 rounded-lg px-2 py-1 text-xs text-white">
                     <div className="font-medium">{d.date.slice(5)}</div>
-                    <div className="text-[#00b4d8]">{d.minutes} dk</div>
-                    <div className="text-[#64748b]">{d.sessions} uçuş</div>
+                    <div className="text-[#00b4d8]">{d.minutes} min</div>
+                    <div className="text-[#64748b]">{d.sessions} flights</div>
                   </div>
                 </div>
               )}
@@ -147,8 +147,8 @@ export function StatsScreen() {
           <ArrowLeft size={18} />
         </button>
         <div>
-          <h1 className="text-base font-semibold text-white">İstatistikler</h1>
-          <p className="text-xs text-[#64748b]">Tüm zamanlar</p>
+          <h1 className="text-base font-semibold text-white">Statistics</h1>
+          <p className="text-xs text-[#64748b]">All time</p>
         </div>
       </div>
 
@@ -160,9 +160,9 @@ export function StatsScreen() {
             className="flex flex-col items-center justify-center py-20 text-center"
           >
             <div className="text-4xl mb-4">✈️</div>
-            <h2 className="text-lg font-semibold text-white mb-2">Henüz uçuş yok</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">No flights yet</h2>
             <p className="text-sm text-[#64748b] max-w-xs">
-              İlk uçuşunu tamamla — istatistiklerin burada görünecek.
+              Complete your first flight — your stats will appear here.
             </p>
           </motion.div>
         ) : (
@@ -170,33 +170,33 @@ export function StatsScreen() {
             <div className="grid grid-cols-2 gap-3">
               <StatCard
                 icon={Clock}
-                label="Toplam Çalışma"
-                value={`${totalHours}s ${totalMins}dk`}
-                sub={`${stats.total_sessions} uçuş`}
+                label="Total Focus"
+                value={`${totalHours}h ${totalMins}m`}
+                sub={`${stats.total_sessions} flights`}
                 color="#00b4d8"
                 delay={0}
               />
               <StatCard
                 icon={Navigation}
-                label="Uçulan Mesafe"
+                label="Distance Flown"
                 value={`${Math.round(stats.total_km).toLocaleString()} km`}
-                sub={`${Math.round(stats.total_miles).toLocaleString()} mil`}
+                sub={`${Math.round(stats.total_miles).toLocaleString()} mi`}
                 color="#48cae4"
                 delay={0.05}
               />
               <StatCard
                 icon={Flame}
-                label="Güncel Seri"
-                value={`${stats.current_streak} gün`}
-                sub={stats.current_streak > 0 ? '🔥 Devam ediyor' : 'Bugün başla!'}
+                label="Current Streak"
+                value={`${stats.current_streak} days`}
+                sub={stats.current_streak > 0 ? '🔥 Ongoing' : 'Start today!'}
                 color="#f4a261"
                 delay={0.1}
               />
               <StatCard
                 icon={TrendingUp}
-                label="En Uzun Seri"
-                value={`${stats.longest_streak} gün`}
-                sub="Tüm zamanlar rekoru"
+                label="Longest Streak"
+                value={`${stats.longest_streak} days`}
+                sub="All-time record"
                 color="#48cae4"
                 delay={0.15}
               />
@@ -210,19 +210,19 @@ export function StatsScreen() {
             >
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Son 30 Gün</h3>
-                  <p className="text-xs text-[#64748b]">Günlük çalışma dakikaları</p>
+                  <h3 className="text-sm font-semibold text-white">Last 30 Days</h3>
+                  <p className="text-xs text-[#64748b]">Daily focus minutes</p>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-[#64748b]">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#00b4d8] inline-block" />Gün</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#f4a261] inline-block" />Bugün</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#00b4d8] inline-block" />Day</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#f4a261] inline-block" />Today</span>
                 </div>
               </div>
               {stats.history.some(d => d.minutes > 0) ? (
                 <BarChart data={stats.history} />
               ) : (
                 <div className="h-28 flex items-center justify-center text-[#374151] text-sm">
-                  Henüz veri yok — ilk uçuşunu yap!
+                  No data yet — make your first flight!
                 </div>
               )}
             </motion.div>
@@ -236,12 +236,12 @@ export function StatsScreen() {
               <div className="flex items-center gap-2 mb-4">
                 <Map size={14} className="text-[#00b4d8]" />
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Uçuş Haritası</h3>
-                  <p className="text-xs text-[#64748b]">Tüm rotalar</p>
+                  <h3 className="text-sm font-semibold text-white">Flight Map</h3>
+                  <p className="text-xs text-[#64748b]">All routes</p>
                 </div>
                 <div className="ml-auto flex items-center gap-3 text-xs text-[#64748b]">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#00b4d8] inline-block" />Canlı</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#f4a261] inline-block" />Şehir</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#00b4d8] inline-block" />Live</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#f4a261] inline-block" />City</span>
                 </div>
               </div>
               <HistoryMap sessions={sessions} />
@@ -256,8 +256,8 @@ export function StatsScreen() {
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-sm">💺</span>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Haftalık Koltuk Haritası</h3>
-                  <p className="text-xs text-[#64748b]">Her koltuk = bir fokus seansı</p>
+                  <h3 className="text-sm font-semibold text-white">Weekly Seat Map</h3>
+                  <p className="text-xs text-[#64748b]">Each seat = one focus session</p>
                 </div>
               </div>
               <SeatMap sessions={sessions} />
@@ -271,7 +271,7 @@ export function StatsScreen() {
             >
               <Plane size={16} className="text-[#00b4d8] flex-shrink-0" />
               <p className="text-xs text-[#64748b]">
-                Her tamamlanan uçuş otomatik olarak bu cihazda saklanır.
+                Every completed flight is automatically saved on this device.
               </p>
             </motion.div>
           </>

@@ -72,7 +72,7 @@ export function HistoryMap({ sessions = [], theme = 'dark' }) {
 
   if (!routes.length) return (
     <div className="h-64 flex items-center justify-center text-[#374151] text-sm rounded-xl overflow-hidden glass border border-white/8">
-      Tamamlanmış şehir modu uçuşu yok
+      No completed city mode flights
     </div>
   );
 

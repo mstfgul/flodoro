@@ -5,10 +5,10 @@ import { useApp } from '../../context/AppContext';
 import { airports } from '../../data/cityPairs';
 
 const STATUS_STYLE = {
-  pending:   { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.2)', label: 'Bekliyor' },
-  active:    { color: '#00b4d8', bg: 'rgba(0,180,216,0.12)',  border: 'rgba(0,180,216,0.35)',  label: 'Aktif'    },
-  completed: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)',   border: 'rgba(34,197,94,0.25)',  label: 'Tamam ✓'  },
-  missed:    { color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', label: 'Geçildi'  },
+  pending:   { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.2)', label: 'Pending'  },
+  active:    { color: '#00b4d8', bg: 'rgba(0,180,216,0.12)',  border: 'rgba(0,180,216,0.35)',  label: 'Active'   },
+  completed: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)',   border: 'rgba(34,197,94,0.25)',  label: 'Done ✓'   },
+  missed:    { color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', label: 'Missed'   },
 };
 
 function AirportSelect({ value, onChange, label }) {
@@ -32,7 +32,7 @@ function AirportSelect({ value, onChange, label }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}
       >
-        <span>{ap ? `${ap.code} · ${ap.city}` : 'Seç...'}</span>
+        <span>{ap ? `${ap.code} · ${ap.city}` : 'Select...'}</span>
         <ChevronRight size={12} style={{ opacity: 0.5, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }} />
       </button>
       <AnimatePresence>
@@ -52,7 +52,7 @@ function AirportSelect({ value, onChange, label }) {
               autoFocus
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Ara..."
+              placeholder="Search..."
               style={{
                 width: '100%', padding: '8px 12px', background: 'rgba(255,255,255,0.06)',
                 border: 'none', borderBottom: '1px solid rgba(255,255,255,0.07)',
@@ -106,22 +106,22 @@ function AddLegForm({ onAdd, onCancel }) {
         background: 'rgba(0,180,216,0.06)', border: '1px solid rgba(0,180,216,0.2)',
         borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12,
       }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#00b4d8', letterSpacing: '0.05em' }}>YENİ BACAK EKLE</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#00b4d8', letterSpacing: '0.05em' }}>ADD NEW LEG</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <AirportSelect value={origin} onChange={setOrigin} label="Kalkış" />
+          <AirportSelect value={origin} onChange={setOrigin} label="Departure" />
           <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 10, color: '#475569' }}>→</div>
-          <AirportSelect value={dest} onChange={setDest} label="Varış" />
+          <AirportSelect value={dest} onChange={setDest} label="Arrival" />
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Kalkış Saati</div>
+            <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Departure Time</div>
             <input
               type="time" value={time} onChange={e => setTime(e.target.value)}
               style={{ width: '100%', padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#e0e6f0', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Süre (dk)</div>
+            <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Duration (min)</div>
             <input
               type="number" value={dur} min="5" max="180" onChange={e => setDur(Math.max(5, parseInt(e.target.value) || 25))}
               style={{ width: '100%', padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#e0e6f0', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
@@ -133,12 +133,12 @@ function AddLegForm({ onAdd, onCancel }) {
             flex: 1, padding: '9px 0', borderRadius: 10, fontWeight: 600, fontSize: 13,
             background: 'rgba(0,180,216,0.2)', border: '1px solid rgba(0,180,216,0.4)',
             color: '#00b4d8', cursor: 'pointer',
-          }}>Ekle</button>
+          }}>Add</button>
           <button onClick={onCancel} style={{
             padding: '9px 20px', borderRadius: 10, fontSize: 13,
             background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
             color: '#64748b', cursor: 'pointer',
-          }}>İptal</button>
+          }}>Cancel</button>
         </div>
       </div>
     </motion.div>
@@ -202,10 +202,10 @@ export function FlightPlanScreen() {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#00b4d8', letterSpacing: '0.1em' }}>FPL</span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#e0e6f0' }}>Günlük Uçuş Planı</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#e0e6f0' }}>Daily Flight Plan</span>
           </div>
           <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
-            {today} · {legs.length} bacak · {totalMin} dk
+            {today} · {legs.length} legs · {totalMin} min
           </div>
         </div>
 
@@ -213,7 +213,7 @@ export function FlightPlanScreen() {
         {legs.length > 0 && (
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: '#22c55e' }}>{completedCount}/{legs.length}</div>
-            <div style={{ fontSize: 10, color: '#475569' }}>tamamlandı</div>
+            <div style={{ fontSize: 10, color: '#475569' }}>completed</div>
           </div>
         )}
       </div>
@@ -228,14 +228,14 @@ export function FlightPlanScreen() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             style={{ textAlign: 'center', padding: '60px 0', color: '#475569' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>Uçuş planı boş</div>
-            <div style={{ fontSize: 13, marginBottom: 24 }}>Günü rotalar ve sürelerle planla</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>Flight plan empty</div>
+            <div style={{ fontSize: 13, marginBottom: 24 }}>Plan your day with routes and durations</div>
             <button onClick={() => setShowForm(true)} style={{
               padding: '10px 24px', borderRadius: 12, fontSize: 14, fontWeight: 600,
               background: 'rgba(0,180,216,0.15)', border: '1px solid rgba(0,180,216,0.35)',
               color: '#00b4d8', cursor: 'pointer',
             }}>
-              + İlk Bacağı Ekle
+              + Add First Leg
             </button>
           </motion.div>
         ) : (
@@ -273,7 +273,7 @@ export function FlightPlanScreen() {
                       {leg.scheduledTime}
                     </div>
                     <div style={{ fontSize: 10, color: '#475569', display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
-                      <Clock size={9} />{leg.duration}dk
+                      <Clock size={9} />{leg.duration}m
                     </div>
                   </div>
 
@@ -341,7 +341,7 @@ export function FlightPlanScreen() {
               justifyContent: 'center', gap: 6, transition: 'all 0.15s',
             }}
           >
-            <Plus size={14} /> Bacak Ekle
+            <Plus size={14} /> Add Leg
           </motion.button>
         )}
       </div>

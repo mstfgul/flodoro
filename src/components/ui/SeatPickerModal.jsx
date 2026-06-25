@@ -71,7 +71,7 @@ export function SeatPickerModal({ onConfirm, onClose }) {
           background: 'linear-gradient(180deg, #0d1226 0%, #080c1c 100%)',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 24,
-          width: 360,
+          width: 'min(360px, calc(100vw - 24px))',
           maxHeight: '88vh',
           display: 'flex',
           flexDirection: 'column',
@@ -82,8 +82,8 @@ export function SeatPickerModal({ onConfirm, onClose }) {
         <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>Koltuk Seç</div>
-              <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>Uçuşun için bir koltuk seç</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>Choose Seat</div>
+              <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>Pick a seat for your flight</div>
             </div>
             <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 10, padding: '6px 8px', color: '#64748b', cursor: 'pointer' }}>
               <X size={16} />
@@ -92,9 +92,9 @@ export function SeatPickerModal({ onConfirm, onClose }) {
           {/* Legend */}
           <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
             {[
-              { color: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.14)', label: 'Dolu' },
-              { color: 'rgba(0,180,216,0.1)', border: 'rgba(0,180,216,0.45)', label: 'Boş' },
-              { color: 'rgba(0,180,216,0.9)', border: '#00b4d8', label: 'Seçili' },
+              { color: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.14)', label: 'Taken' },
+              { color: 'rgba(0,180,216,0.1)', border: 'rgba(0,180,216,0.45)', label: 'Free' },
+              { color: 'rgba(0,180,216,0.9)', border: '#00b4d8', label: 'Selected' },
             ].map(({ color, border, label }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{ width: 14, height: 10, borderRadius: 3, background: color, border: `1px solid ${border}` }} />
@@ -162,10 +162,10 @@ export function SeatPickerModal({ onConfirm, onClose }) {
 
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.08em', color: isCockpit ? '#fbbf24' : '#94a3b8', fontFamily: 'monospace' }}>
-                KOKPIT
+                COCKPIT
               </div>
               <div style={{ fontSize: 10, color: isCockpit ? 'rgba(251,191,36,0.7)' : '#334155', marginTop: 2, lineHeight: 1.4 }}>
-                Pilot perspektifi · ATC radyo + ortam sesi
+                Pilot perspective · ATC radio + ambient sound
               </div>
             </div>
 
@@ -191,7 +191,7 @@ export function SeatPickerModal({ onConfirm, onClose }) {
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
-            <span style={{ fontSize: 9, color: '#1e293b', fontWeight: 700, letterSpacing: '0.12em' }}>YOLCU KABİNİ</span>
+            <span style={{ fontSize: 9, color: '#1e293b', fontWeight: 700, letterSpacing: '0.12em' }}>PASSENGER CABIN</span>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
           </div>
 
@@ -302,7 +302,7 @@ export function SeatPickerModal({ onConfirm, onClose }) {
                 fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.05em',
               }}
             >
-              {isCockpit ? '🎙 Kokpit' : `Koltuk ${selected}`}
+              {isCockpit ? '🎙 Cockpit' : `Seat ${selected}`}
             </motion.div>
           )}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
@@ -310,7 +310,7 @@ export function SeatPickerModal({ onConfirm, onClose }) {
               onClick={() => onConfirm(null)}
               style={{ fontSize: 12, color: '#475569', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 14px', cursor: 'pointer' }}
             >
-              Geç
+              Skip
             </button>
             <motion.button
               onClick={() => selected && onConfirm(selected)}
@@ -326,7 +326,7 @@ export function SeatPickerModal({ onConfirm, onClose }) {
                 boxShadow: selected ? '0 0 16px rgba(0,180,216,0.3)' : 'none',
               }}
             >
-              ✈ Uçuşa Bin
+              ✈ Board Flight
             </motion.button>
           </div>
         </div>

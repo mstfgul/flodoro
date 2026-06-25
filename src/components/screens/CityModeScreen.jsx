@@ -9,9 +9,9 @@ import { haversineDistance, estimateDuration } from '../../utils/geo';
 import { formatDuration } from '../../utils/format';
 
 const SUB_MODES = [
-  { id: 'short', label: 'Kısa Uçuşlar', sub: '20-35 dk gerçek rotalar', icon: Zap, color: '#00b4d8' },
-  { id: 'classic', label: 'Klasik Pomodoro', sub: 'Tam 25 dakika, tematik', icon: Clock, color: '#f4a261' },
-  { id: 'custom', label: 'Özel Rota', sub: 'Kendi şehirlerini seç', icon: Globe, color: '#48cae4' },
+  { id: 'short', label: 'Short Flights', sub: '20-35 min real routes', icon: Zap, color: '#00b4d8' },
+  { id: 'classic', label: 'Classic Pomodoro', sub: 'Exactly 25 minutes, thematic', icon: Clock, color: '#f4a261' },
+  { id: 'custom', label: 'Custom Route', sub: 'Choose your own cities', icon: Globe, color: '#48cae4' },
 ];
 
 function PairCard({ pair, onClick, accent = '#00b4d8' }) {
@@ -177,11 +177,11 @@ export function CityModeScreen() {
           <ArrowLeft size={18} />
         </button>
         <div>
-          <h1 className="text-base font-semibold text-white">Şehir Seç</h1>
+          <h1 className="text-base font-semibold text-white">Choose City</h1>
           <p className="text-xs text-[#64748b]">
             {subMode
               ? SUB_MODES.find((s) => s.id === subMode)?.label
-              : 'Mod seçin'}
+              : 'Select mode'}
           </p>
         </div>
       </div>
@@ -205,18 +205,18 @@ export function CityModeScreen() {
                   whileHover={{ scale: 1.02, x: 6 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSubMode(m.id)}
-                  className="flight-card w-full glass border border-white/8 rounded-2xl p-5 text-left"
+                  className="flight-card w-full glass border border-white/8 rounded-2xl p-4 sm:p-5 text-left"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                      className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                       style={{ background: `${m.color}15` }}
                     >
-                      <m.icon size={20} style={{ color: m.color }} />
+                      <m.icon size={17} style={{ color: m.color }} />
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-white mb-0.5">{m.label}</div>
-                      <div className="text-sm text-[#64748b]">{m.sub}</div>
+                      <div className="text-sm font-semibold text-white mb-0.5">{m.label}</div>
+                      <div className="text-xs text-[#64748b]">{m.sub}</div>
                     </div>
                     <ChevronRight size={16} className="text-[#475569]" />
                   </div>
@@ -233,7 +233,7 @@ export function CityModeScreen() {
               className="space-y-2"
             >
               <p className="text-xs text-[#64748b] mb-4">
-                Gerçek kısa uçuş rotaları — 20-35 dakika
+                Real short-haul routes — 20-35 min
               </p>
               {shortFlights.map((p, i) => (
                 <motion.div
@@ -257,7 +257,7 @@ export function CityModeScreen() {
               <div className="flex items-center gap-2 mb-4 p-3 bg-[#f4a261]/10 border border-[#f4a261]/20 rounded-xl">
                 <Clock size={14} className="text-[#f4a261] flex-shrink-0" />
                 <p className="text-xs text-[#f4a261]">
-                  Bu modda sayaç tam 25 dakikadır. Şehirler atmosfer içindir.
+                  In this mode the timer is exactly 25 minutes. Cities are for atmosphere.
                 </p>
               </div>
               {classicPairs.map((p, i) => (
@@ -280,14 +280,14 @@ export function CityModeScreen() {
               className="space-y-4"
             >
               <p className="text-xs text-[#64748b]">
-                40+ havalimanından seç, süre otomatik hesaplanır
+                Choose from 40+ airports, duration calculated automatically
               </p>
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-[#94a3b8] mb-1.5 block">Kalkış ✈</label>
+                  <label className="text-xs text-[#94a3b8] mb-1.5 block">Departure ✈</label>
                   <AirportSearch
-                    placeholder="Şehir veya kod ara… (İstanbul, IST…)"
+                    placeholder="Search city or code… (Istanbul, IST…)"
                     value={fromAirport}
                     onChange={setFromAirport}
                     onSelect={setFromAirport}
@@ -296,9 +296,9 @@ export function CityModeScreen() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-[#94a3b8] mb-1.5 block">Varış 🛬</label>
+                  <label className="text-xs text-[#94a3b8] mb-1.5 block">Arrival 🛬</label>
                   <AirportSearch
-                    placeholder="Şehir veya kod ara…"
+                    placeholder="Search city or code…"
                     value={toAirport}
                     onChange={setToAirport}
                     onSelect={setToAirport}
@@ -326,11 +326,11 @@ export function CityModeScreen() {
                       <div className="text-lg font-bold text-[#00b4d8]">
                         {formatDuration(customDuration)}
                       </div>
-                      <div className="text-xs text-[#64748b]">tahmini süre</div>
+                      <div className="text-xs text-[#64748b]">estimated duration</div>
                     </div>
                   </div>
                   <Button onClick={startCustom} variant="primary" size="lg" className="w-full">
-                    Uçuşa Başla ✈
+                    Start Flight ✈
                   </Button>
                 </motion.div>
               )}

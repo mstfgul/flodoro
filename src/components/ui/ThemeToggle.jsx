@@ -27,7 +27,7 @@ export function ThemeToggle() {
       >
         {isDark ? <Moon size={13} /> : <Sun size={13} />}
       </motion.span>
-      {isDark ? 'Koyu' : 'Aydınlık'}
+      {isDark ? 'Dark' : 'Light'}
     </motion.button>
   );
 }

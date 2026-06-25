@@ -1,28 +1,28 @@
 const WMO = {
-  0:  { text: 'Açık',            emoji: '☀️' },
-  1:  { text: 'Az bulutlu',      emoji: '🌤' },
-  2:  { text: 'Parçalı bulutlu', emoji: '⛅' },
-  3:  { text: 'Kapalı',          emoji: '☁️' },
-  45: { text: 'Sisli',           emoji: '🌫' },
-  48: { text: 'Buzlu sis',       emoji: '🌫' },
-  51: { text: 'Hafif çisenti',   emoji: '🌦' },
-  53: { text: 'Çisenti',         emoji: '🌦' },
-  55: { text: 'Yoğun çisenti',   emoji: '🌧' },
-  61: { text: 'Hafif yağmur',    emoji: '🌧' },
-  63: { text: 'Yağmur',          emoji: '🌧' },
-  65: { text: 'Yoğun yağmur',    emoji: '🌧' },
-  71: { text: 'Hafif kar',       emoji: '🌨' },
-  73: { text: 'Kar',             emoji: '❄️' },
-  75: { text: 'Yoğun kar',       emoji: '❄️' },
-  80: { text: 'Sağanak',         emoji: '🌦' },
-  82: { text: 'Yoğun sağanak',   emoji: '⛈' },
-  85: { text: 'Kar sağanağı',    emoji: '🌨' },
-  95: { text: 'Fırtına',         emoji: '⛈' },
-  99: { text: 'Şiddetli fırtına',emoji: '🌩' },
+  0:  { text: 'Clear',           emoji: '☀️' },
+  1:  { text: 'Mostly clear',    emoji: '🌤' },
+  2:  { text: 'Partly cloudy',   emoji: '⛅' },
+  3:  { text: 'Overcast',        emoji: '☁️' },
+  45: { text: 'Foggy',           emoji: '🌫' },
+  48: { text: 'Icy fog',         emoji: '🌫' },
+  51: { text: 'Light drizzle',   emoji: '🌦' },
+  53: { text: 'Drizzle',         emoji: '🌦' },
+  55: { text: 'Heavy drizzle',   emoji: '🌧' },
+  61: { text: 'Light rain',      emoji: '🌧' },
+  63: { text: 'Rain',            emoji: '🌧' },
+  65: { text: 'Heavy rain',      emoji: '🌧' },
+  71: { text: 'Light snow',      emoji: '🌨' },
+  73: { text: 'Snow',            emoji: '❄️' },
+  75: { text: 'Heavy snow',      emoji: '❄️' },
+  80: { text: 'Showers',         emoji: '🌦' },
+  82: { text: 'Heavy showers',   emoji: '⛈' },
+  85: { text: 'Snow showers',    emoji: '🌨' },
+  95: { text: 'Thunderstorm',    emoji: '⛈' },
+  99: { text: 'Severe storm',    emoji: '🌩' },
 };
 
 function resolveWmo(code) {
-  return WMO[code] ?? WMO[Math.floor(code / 10) * 10] ?? { text: 'Bilinmiyor', emoji: '🌡' };
+  return WMO[code] ?? WMO[Math.floor(code / 10) * 10] ?? { text: 'Unknown', emoji: '🌡' };
 }
 
 export async function fetchWeather(lat, lon) {

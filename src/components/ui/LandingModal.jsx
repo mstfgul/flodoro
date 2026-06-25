@@ -21,7 +21,7 @@ export function LandingModal({ open, elapsed, onBreak, onStay }) {
             style={{
               position: 'fixed', top: '50%', left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: '100%', maxWidth: 320,
+              width: 'calc(100% - 32px)', maxWidth: 360,
               zIndex: 2001,
               background: 'rgba(4,7,18,0.97)',
               border: '1px solid rgba(0,180,216,0.25)',
@@ -33,9 +33,9 @@ export function LandingModal({ open, elapsed, onBreak, onStay }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <span style={{ fontSize: 28 }}>🛬</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9' }}>Uçak İndi!</div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9' }}>Landed!</div>
                 <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
-                  Uçuş süresi:{' '}
+                  Flight time:{' '}
                   <span style={{ color: '#00b4d8', fontFamily: 'monospace', fontWeight: 600 }}>
                     {formatTime(elapsed)}
                   </span>
@@ -47,7 +47,7 @@ export function LandingModal({ open, elapsed, onBreak, onStay }) {
               <button
                 onClick={onBreak}
                 style={{
-                  flex: 1, height: 38, borderRadius: 8, border: 'none', cursor: 'pointer',
+                  flex: 1, height: 48, borderRadius: 10, border: 'none', cursor: 'pointer',
                   background: 'linear-gradient(135deg, rgba(0,180,216,0.25), rgba(0,180,216,0.12))',
                   color: '#00b4d8', fontWeight: 700, fontSize: 12,
                   transition: 'all 0.15s',
@@ -55,12 +55,12 @@ export function LandingModal({ open, elapsed, onBreak, onStay }) {
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,180,216,0.3)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,180,216,0.25), rgba(0,180,216,0.12))'; }}
               >
-                ☕ Molaya Geç
+                ☕ Take a Break
               </button>
               <button
                 onClick={onStay}
                 style={{
-                  flex: 1, height: 38, borderRadius: 8, cursor: 'pointer',
+                  flex: 1, height: 48, borderRadius: 10, cursor: 'pointer',
                   background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
                   color: '#64748b', fontWeight: 600, fontSize: 12,
                   transition: 'all 0.15s',
@@ -68,7 +68,7 @@ export function LandingModal({ open, elapsed, onBreak, onStay }) {
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = '#94a3b8'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#64748b'; }}
               >
-                🛫 Bekle
+                🛫 Stay Onboard
               </button>
             </div>
           </motion.div>

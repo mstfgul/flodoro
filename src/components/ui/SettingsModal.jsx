@@ -137,8 +137,8 @@ export function SettingsModal({ open, onClose }) {
                     <Layers size={15} color="#00b4d8" />
                   </div>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Ayarlar</div>
-                    <div style={{ fontSize: 11, color: '#475569', marginTop: 1 }}>Uçuş tercihleri</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Settings</div>
+                    <div style={{ fontSize: 11, color: '#475569', marginTop: 1 }}>Flight preferences</div>
                   </div>
                 </div>
                 <button
@@ -162,7 +162,7 @@ export function SettingsModal({ open, onClose }) {
               <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
                 {/* ── Mola Süresi ── */}
-                <Section icon={Clock} label="Mola Süresi">
+                <Section icon={Clock} label="Break Duration">
                   <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                     {BREAK_OPTIONS.map(min => (
                       <button
@@ -183,12 +183,12 @@ export function SettingsModal({ open, onClose }) {
                           transition: 'all 0.15s',
                         }}
                       >
-                        {min}<span style={{ fontSize: 10, marginLeft: 2, opacity: 0.7 }}>dk</span>
+                        {min}<span style={{ fontSize: 10, marginLeft: 2, opacity: 0.7 }}>m</span>
                       </button>
                     ))}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: '#475569' }}>Özel:</span>
+                    <span style={{ fontSize: 12, color: '#475569' }}>Custom:</span>
                     <input
                       type="number"
                       min="1"
@@ -204,18 +204,18 @@ export function SettingsModal({ open, onClose }) {
                         outline: 'none',
                       }}
                     />
-                    <span style={{ fontSize: 12, color: '#475569' }}>dakika</span>
+                    <span style={{ fontSize: 12, color: '#475569' }}>min</span>
                   </div>
                 </Section>
 
                 <Divider />
 
                 {/* ── Harita Modu ── */}
-                <Section icon={Map} label="Harita Modu">
+                <Section icon={Map} label="Map Mode">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     {[
-                      { value: 'animated', label: 'Animasyonlu', sub: 'Simüle yörünge', icon: '🛫' },
-                      { value: 'realtime', label: 'Gerçek Zamanlı', sub: 'Canlı konum', icon: '📡' },
+                      { value: 'animated', label: 'Animated', sub: 'Simulated route', icon: '🛫' },
+                      { value: 'realtime', label: 'Real-time', sub: 'Live position', icon: '📡' },
                     ].map(opt => (
                       <button
                         key={opt.value}
@@ -247,22 +247,22 @@ export function SettingsModal({ open, onClose }) {
                 <Divider />
 
                 {/* ── Ses & Bildirimler ── */}
-                <Section icon={Volume2} label="Ses & Bildirimler">
+                <Section icon={Volume2} label="Sound & Notifications">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {[
                       {
                         key: 'soundEnabled',
                         icon: '🎵',
-                        label: 'Ortam Sesi',
-                        sub: 'Motor sesi, iniş zili, mola bildirimi',
+                        label: 'Ambient Sound',
+                        sub: 'Engine, landing chime, break alert',
                         onToggle: () => update('soundEnabled', !settings.soundEnabled),
                         value: settings.soundEnabled,
                       },
                       {
                         key: 'notifEnabled',
                         icon: '🔔',
-                        label: 'Bildirimler',
-                        sub: 'Uçuş & mola bitişinde sistem bildirimi',
+                        label: 'Notifications',
+                        sub: 'System notification at flight & break end',
                         onToggle: handleNotifToggle,
                         value: settings.notifEnabled,
                       },
@@ -293,7 +293,7 @@ export function SettingsModal({ open, onClose }) {
                 <Divider />
 
                 {/* ── Oturum Davranışı ── */}
-                <Section icon={Moon} label="Oturum Davranışı">
+                <Section icon={Moon} label="Session Behavior">
                   <div
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -306,9 +306,9 @@ export function SettingsModal({ open, onClose }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span style={{ fontSize: 18 }}>⚡</span>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#e0e6f0' }}>Mola otomatik başlat</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#e0e6f0' }}>Auto-start break</div>
                         <div style={{ fontSize: 11, color: '#475569', marginTop: 1 }}>
-                          Uçuş bitince mola sayacı başlasın
+                          Start break timer when flight ends
                         </div>
                       </div>
                     </div>
@@ -343,7 +343,7 @@ export function SettingsModal({ open, onClose }) {
                   onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,180,216,0.25)'; }}
                   onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,180,216,0.15)'; }}
                 >
-                  Tamam
+                  Done
                 </button>
               </div>
             </motion.div>

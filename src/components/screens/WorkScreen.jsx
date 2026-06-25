@@ -73,7 +73,7 @@ export function WorkScreen() {
   // ── handleComplete — uses ref so it can call saveSession without TDZ ──
   const handleComplete = useCallback(() => {
     playLanding();
-    notify('Uçuş Tamamlandı! ✈', `${session?.origin?.city} → ${session?.destination?.city} — Mola zamanı!`);
+    notify('Flight Complete! ✈', `${session?.origin?.city} → ${session?.destination?.city} — Break time!`);
     stopEngine();
     if (isCockpit) stopCockpitMode(); else stopCabinAmbience();
     stopAtcRadio();
@@ -86,8 +86,8 @@ export function WorkScreen() {
     useTimer(handleComplete);
 
   // ── saveSession — persists to localStorage ──────────────────────────
-  const saveSession = useCallback((st) => {
-    const finalMin = isRealistic ? Math.round(elapsed / 60) : Math.round(totalSeconds / 60);
+  const saveSession = useCallback((st, useElapsed = false) => {
+    const finalMin = (isRealistic || useElapsed) ? Math.round(elapsed / 60) : Math.round(totalSeconds / 60);
     const dist = session?.origin && session?.destination
       ? haversineDistance(session.origin.lat, session.origin.lon, session.destination.lat, session.destination.lon)
       : 0;
@@ -200,8 +200,10 @@ export function WorkScreen() {
 
   const handleLandingBreak = () => {
     setShowLandingModal(false);
-    notify('İniş Yapıldı! 🛬', 'Mola süresi başladı.');
-    saveSession('completed');
+    notify('Landed! 🛬', 'Break time started.');
+    // Realistic + auto-detected landing = fully completed; manual early land = cancelled (won't count in stats)
+    const isActualLanding = isRealistic && landingDetected.current;
+    saveSession(isActualLanding ? 'completed' : 'cancelled', !isActualLanding);
     dispatch({ type: 'GO_BREAK' });
   };
   const handleStayOnboard = () => { setShowLandingModal(false); landingDetected.current = false; resume(); };
@@ -225,7 +227,7 @@ export function WorkScreen() {
     stopEngine();
     if (isCockpit) stopCockpitMode(); else stopCabinAmbience();
     stopAtcRadio();
-    notify('İniş Yapıldı! 🛬', 'Mola süresi başladı.');
+    notify('Landed! 🛬', 'Break time started.');
     saveSession('completed');
     dispatch({ type: 'GO_BREAK' });
   };
@@ -356,7 +358,7 @@ export function WorkScreen() {
           >
             <div className="text-center">
               <div className="text-5xl mb-3">⏸</div>
-              <p className="text-white font-semibold text-lg">Duraklatıldı</p>
+              <p className="text-white font-semibold text-lg">Paused</p>
             </div>
           </motion.div>
         )}
@@ -366,11 +368,10 @@ export function WorkScreen() {
       <motion.div
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="absolute top-0 left-0 right-0 flex items-center gap-3 px-4 py-3 border-b"
-        style={{ zIndex: 900 }}
+        className="absolute top-0 left-0 right-0 flex items-center gap-1.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 border-b"
         style={isDark
-          ? { background: 'rgba(4,7,18,0.82)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.05)' }
-          : { background: 'rgba(248,252,255,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: 'rgba(0,0,0,0.08)' }
+          ? { zIndex: 900, background: 'rgba(4,7,18,0.82)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.05)' }
+          : { zIndex: 900, background: 'rgba(248,252,255,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: 'rgba(0,0,0,0.08)' }
         }
       >
         <button
@@ -381,14 +382,19 @@ export function WorkScreen() {
           Flo<span className="text-[#00b4d8]">doro</span>
         </button>
 
-        <div className="flex items-center gap-1.5 ml-2 text-sm">
-          <span style={{ color: isDark ? '#e0e6f0' : '#334155' }} className="font-medium">{origin?.city}</span>
+        <div className="flex items-center gap-1.5 ml-1 sm:ml-2 min-w-0 flex-shrink text-sm">
+          {/* Mobile: just ICAO codes */}
+          <span className="sm:hidden font-mono text-xs font-bold" style={{ color: '#00b4d8' }}>{origin?.code}</span>
+          <span className="sm:hidden text-[#475569] text-xs">→</span>
+          <span className="sm:hidden font-mono text-xs font-bold" style={{ color: '#f4a261' }}>{destination?.code}</span>
+          {/* Desktop: full city names with animated plane */}
+          <span className="hidden sm:inline font-medium truncate" style={{ color: isDark ? '#e0e6f0' : '#334155' }}>{origin?.city}</span>
           <motion.span
+            className="hidden sm:inline text-[#00b4d8] text-base"
             animate={{ x: [0, 5, 0] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-            className="text-[#00b4d8] text-base"
           >✈</motion.span>
-          <span style={{ color: isDark ? '#e0e6f0' : '#334155' }} className="font-medium">{destination?.city}</span>
+          <span className="hidden sm:inline font-medium truncate" style={{ color: isDark ? '#e0e6f0' : '#334155' }}>{destination?.city}</span>
         </div>
 
         {/* Cockpit badge */}
@@ -399,7 +405,7 @@ export function WorkScreen() {
             className="hidden sm:flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold border"
             style={{ background: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.35)', color: '#fbbf24', letterSpacing: '0.06em' }}
           >
-            🎙 KOKPIT
+            🎙 COCKPIT
           </motion.span>
         )}
 
@@ -417,26 +423,26 @@ export function WorkScreen() {
 
         {isRealistic && (
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 border border-green-500/30 text-green-400 font-medium animate-pulse">
-            CANLI
+            LIVE
           </span>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
           <button
             onClick={() => setMapView((v) => (v === 'animated' ? 'realtime' : 'animated'))}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
               mapView === 'realtime'
                 ? 'bg-green-500/20 border border-green-500/30 text-green-400'
                 : 'glass border border-white/10 text-[#64748b] hover:text-white'
             }`}
           >
-            {mapView === 'realtime' ? <><Satellite size={12} /> Canlı</> : <><Map size={12} /> Simüle</>}
+            {mapView === 'realtime' ? <><Satellite size={12} /> Live</> : <><Map size={12} /> Simulated</>}
           </button>
           {/* Cockpit audio toggle */}
           <motion.button
             onClick={handleToggleAtc}
             whileTap={{ scale: 0.9 }}
-            title="Kokpit Sesleri"
+            title="Cockpit Audio"
             className="relative p-2 rounded-lg transition-all"
             style={{
               background: atcOn ? 'rgba(0,180,216,0.15)' : 'transparent',
@@ -459,8 +465,8 @@ export function WorkScreen() {
           {/* Ambient wallpaper mode */}
           <button
             onClick={() => setAmbientMode(true)}
-            title="Ambient mod (A)"
-            className="p-2 rounded-lg transition-all"
+            title="Ambient mode (A)"
+            className="hidden sm:block p-2 rounded-lg transition-all"
             style={{ background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
             onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
             onMouseLeave={e => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = 'transparent'; }}
@@ -471,7 +477,7 @@ export function WorkScreen() {
           {/* Focus mode toggle */}
           <button
             onClick={() => setHudOpen(v => !v)}
-            title={hudOpen ? 'Odak moduna geç' : 'Bilgileri göster'}
+            title={hudOpen ? 'Enter focus mode' : 'Show info'}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={!hudOpen
               ? { background: 'rgba(0,180,216,0.15)', border: '1px solid rgba(0,180,216,0.35)', color: '#00b4d8' }
@@ -481,15 +487,15 @@ export function WorkScreen() {
             onMouseLeave={e => { if (hudOpen) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#64748b'; } }}
           >
             <Focus size={13} />
-            <span style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: '0.08em' }}>
-              {hudOpen ? 'ODAK' : 'ODAK'}
+            <span className="hidden sm:inline" style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: '0.08em' }}>
+              FOCUS
             </span>
           </button>
 
           {/* Sound mute toggle */}
           <button
             onClick={handleToggleMute}
-            title={soundMuted ? 'Sesi aç' : 'Sesi kapat'}
+            title={soundMuted ? 'Unmute' : 'Mute'}
             className="p-2 rounded-lg transition-all"
             style={soundMuted
               ? { background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }
@@ -504,7 +510,7 @@ export function WorkScreen() {
           {/* Theme toggle */}
           <button
             onClick={() => dispatch({ type: 'SET_THEME', payload: isDark ? 'light' : 'dark' })}
-            title={isDark ? 'Aydınlık mod' : 'Karanlık mod'}
+            title={isDark ? 'Light mode' : 'Dark mode'}
             className="p-2 rounded-lg transition-all"
             style={{ background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
             onMouseEnter={e => { e.currentTarget.style.color = isDark ? '#fbbf24' : '#0f172a'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
@@ -513,7 +519,7 @@ export function WorkScreen() {
             {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
-          <button onClick={() => safeNavigate('stats')} className="p-2 hover:bg-white/5 rounded-lg text-[#64748b] hover:text-white transition-colors">
+          <button onClick={() => safeNavigate('stats')} className="hidden sm:block p-2 hover:bg-white/5 rounded-lg text-[#64748b] hover:text-white transition-colors">
             <BarChart2 size={16} />
           </button>
           <button onClick={() => setShowSettings(true)} className="p-2 hover:bg-white/5 rounded-lg text-[#64748b] hover:text-white transition-colors">
@@ -523,7 +529,7 @@ export function WorkScreen() {
       </motion.div>
 
       {/* ── Bottom HUD ────────────────────────────────────────── */}
-      <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-1.5 px-3" style={{ zIndex: 800 }}>
+      <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-1.5 px-2 sm:px-3" style={{ zIndex: 800 }}>
         <AnimatePresence>
           {hudOpen && (
             <motion.div
@@ -532,12 +538,12 @@ export function WorkScreen() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 24 }}
               transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-              className="w-full grid gap-2"
-              style={{ maxWidth: 700, gridTemplateColumns: '1fr 1.1fr 1fr' }}
+              className="w-full flex gap-2"
+              style={{ maxWidth: 700 }}
             >
-              {/* LEFT — Origin */}
-              <div className="rounded-2xl p-3.5" style={panelStyle}>
-                <div style={monoLabel} className="mb-2">KALKIŞ</div>
+              {/* LEFT — Origin (hidden on mobile) */}
+              <div className="hidden sm:block rounded-2xl p-3.5 flex-1 min-w-0" style={panelStyle}>
+                <div style={monoLabel} className="mb-2">DEPARTURE</div>
                 <div style={{ fontFamily: 'monospace', fontSize: 28, fontWeight: 900, color: '#00b4d8', lineHeight: 1 }}>
                   {origin?.code || '???'}
                 </div>
@@ -568,7 +574,15 @@ export function WorkScreen() {
               </div>
 
               {/* CENTER — Timer + controls */}
-              <div className="rounded-2xl p-3.5 flex flex-col items-center gap-2.5" style={panelStyle}>
+              <div className="flex-1 rounded-2xl p-3.5 flex flex-col items-center gap-2.5 min-w-0" style={panelStyle}>
+                {/* Mobile-only compact route */}
+                <div className="sm:hidden flex items-center gap-3 w-full justify-center pb-1 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 900, color: '#00b4d8' }}>{origin?.code}</span>
+                  <span style={{ color: '#475569', fontSize: 12 }}>✈</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 900, color: '#f4a261' }}>{destination?.code}</span>
+                  {weather.origin && <span style={{ fontSize: 10, color: '#64748b', marginLeft: 4 }}>{weather.origin.emoji} {weather.origin.temp}°C</span>}
+                  {weather.dest && <span style={{ fontSize: 10, color: '#64748b' }}>→ {weather.dest.emoji} {weather.dest.temp}°C</span>}
+                </div>
                 {/* Status chip */}
                 <div className="flex items-center gap-2 w-full justify-between">
                   <span style={{ ...monoLabel }}>
@@ -593,7 +607,7 @@ export function WorkScreen() {
                     {formatTime(isRealistic ? elapsed : (remaining ?? 0))}
                   </span>
                   <span style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>
-                    {isRealistic ? 'geçti' : 'kaldı'}
+                    {isRealistic ? 'elapsed' : 'remaining'}
                   </span>
                 </div>
 
@@ -608,7 +622,7 @@ export function WorkScreen() {
                       />
                     </div>
                     <div style={{ fontSize: 9, color: '#475569', marginTop: 3, fontFamily: 'monospace', textAlign: 'center' }}>
-                      {Math.round(progress * 100)}% · {formatDuration(session.duration)} toplam
+                      {Math.round(progress * 100)}% · {formatDuration(session.duration)} total
                     </div>
                   </div>
                 )}
@@ -618,8 +632,8 @@ export function WorkScreen() {
                   <button
                     onClick={goBreak}
                     style={{
-                      width: '100%', height: 38, background: 'transparent',
-                      border: '1px solid rgba(251,191,36,0.4)', borderRadius: 6,
+                      width: '100%', height: 44, background: 'transparent',
+                      border: '1px solid rgba(251,191,36,0.4)', borderRadius: 8,
                       fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
                       letterSpacing: '0.12em', color: '#fbbf24', cursor: 'pointer', transition: 'all 0.15s',
                     }}
@@ -633,9 +647,9 @@ export function WorkScreen() {
                     <button
                       onClick={isPaused ? resume : pause}
                       style={{
-                        flex: 1, height: 38, background: 'transparent',
+                        flex: 1, height: 44, background: 'transparent',
                         border: `1px solid ${isPaused ? 'rgba(0,180,216,0.5)' : 'rgba(255,255,255,0.12)'}`,
-                        borderRadius: 6, fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
+                        borderRadius: 8, fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
                         letterSpacing: '0.1em', color: isPaused ? '#00b4d8' : '#64748b',
                         cursor: 'pointer', transition: 'all 0.15s',
                       }}
@@ -647,9 +661,9 @@ export function WorkScreen() {
                     <button
                       onClick={() => setShowLandingModal(true)}
                       style={{
-                        flex: 1, height: 38, background: 'transparent',
-                        border: '1px solid rgba(34,197,94,0.35)', borderRadius: 6,
-                        fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
+                        flex: 1, height: 44, background: 'transparent',
+                        border: '1px solid rgba(34,197,94,0.35)', borderRadius: 8,
+                        fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
                         letterSpacing: '0.1em', color: '#22c55e',
                         cursor: 'pointer', transition: 'all 0.15s',
                       }}
@@ -664,7 +678,7 @@ export function WorkScreen() {
                 {/* Abort — subtle text link */}
                 <button
                   onClick={stop}
-                  style={{ background: 'none', border: 'none', fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.12em', color: '#334155', cursor: 'pointer', transition: 'color 0.15s', padding: '2px 0' }}
+                  style={{ background: 'none', border: 'none', fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.12em', color: '#334155', cursor: 'pointer', transition: 'color 0.15s', padding: '6px 0', minHeight: 32 }}
                   onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; }}
                   onMouseLeave={e => { e.currentTarget.style.color = '#334155'; }}
                 >
@@ -672,9 +686,9 @@ export function WorkScreen() {
                 </button>
               </div>
 
-              {/* RIGHT — Destination */}
-              <div className="rounded-2xl p-3.5" style={{ ...panelStyle, textAlign: 'right' }}>
-                <div style={{ ...monoLabel, textAlign: 'right' }} className="mb-2">VARIŞ</div>
+              {/* RIGHT — Destination (hidden on mobile) */}
+              <div className="hidden sm:block rounded-2xl p-3.5 flex-1 min-w-0" style={{ ...panelStyle, textAlign: 'right' }}>
+                <div style={{ ...monoLabel, textAlign: 'right' }} className="mb-2">ARRIVAL</div>
                 <div style={{ fontFamily: 'monospace', fontSize: 28, fontWeight: 900, color: '#f4a261', lineHeight: 1 }}>
                   {destination?.code || '???'}
                 </div>
@@ -694,12 +708,12 @@ export function WorkScreen() {
                 <div style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}`, margin: '8px 0' }} />
                 {!isRealistic && (
                   <div style={{ fontSize: 10, color: '#64748b' }}>
-                    Mola: {formatDuration(settings.breakDuration)}
+                    Break: {formatDuration(settings.breakDuration)}
                   </div>
                 )}
                 {session.seat && (
                   <div style={{ fontFamily: 'monospace', fontSize: 11, color: isDark ? '#94a3b8' : '#475569', marginTop: 4 }}>
-                    {session.seat === 'KOKPIT' ? '🎙 KOKPIT' : `💺 ${session.seat}`}
+                    {session.seat === 'KOKPIT' ? '🎙 COCKPIT' : `💺 ${session.seat}`}
                   </div>
                 )}
               </div>
@@ -714,7 +728,7 @@ export function WorkScreen() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-4 rounded-full px-5 py-2.5"
+            className="flex items-center gap-3 sm:gap-4 rounded-full px-4 sm:px-5 py-3"
             style={{
               background: isDark ? 'rgba(4,7,18,0.9)' : 'rgba(248,252,255,0.94)',
               border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
@@ -784,40 +798,40 @@ export function WorkScreen() {
             boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
           }}>
             <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: '0.18em', color: '#f87171', marginBottom: 10 }}>
-              ⚠ UYARI
+              ⚠ WARNING
             </div>
             <div style={{ fontSize: 16, fontWeight: 700, color: isDark ? '#f1f5f9' : '#0f172a', marginBottom: 8, lineHeight: 1.4 }}>
-              Uçuşu sonlandır?
+              End flight?
             </div>
             <div style={{ fontSize: 13, color: '#64748b', marginBottom: 24, lineHeight: 1.6 }}>
-              {origin?.city} → {destination?.city} uçuşu iptal edilecek. Bu işlem geri alınamaz.
+              The {origin?.city} → {destination?.city} flight will be cancelled. This cannot be undone.
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={() => setLeaveTarget(null)}
                 style={{
-                  flex: 1, height: 40, background: 'transparent',
-                  border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, cursor: 'pointer',
-                  fontFamily: 'monospace', fontSize: 11, fontWeight: 600,
+                  flex: 1, height: 48, background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, cursor: 'pointer',
+                  fontFamily: 'monospace', fontSize: 12, fontWeight: 600,
                   letterSpacing: '0.08em', color: '#64748b',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; e.currentTarget.style.color = '#94a3b8'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#64748b'; }}
               >
-                GERİ DÖN
+                GO BACK
               </button>
               <button
                 onClick={confirmLeave}
                 style={{
-                  flex: 1, height: 40, background: 'rgba(248,113,113,0.1)',
-                  border: '1px solid rgba(248,113,113,0.35)', borderRadius: 6, cursor: 'pointer',
-                  fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
+                  flex: 1, height: 48, background: 'rgba(248,113,113,0.1)',
+                  border: '1px solid rgba(248,113,113,0.35)', borderRadius: 8, cursor: 'pointer',
+                  fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
                   letterSpacing: '0.08em', color: '#f87171',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.18)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.6)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.1)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.35)'; }}
               >
-                SONLANDIR
+                TERMINATE
               </button>
             </div>
           </div>

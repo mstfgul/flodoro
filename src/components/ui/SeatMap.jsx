@@ -52,7 +52,7 @@ export function SeatMap({ sessions = [] }) {
     <div style={{ padding: '4px 0' }}>
       {/* Legend */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 14, flexWrap: 'wrap' }}>
-        {[['completed','Tamamlandı'],['missed','Kaçırıldı'],['empty','Boş']].map(([st, label]) => (
+        {[['completed','Completed'],['missed','Missed'],['empty','Empty']].map(([st, label]) => (
           <div key={st} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{
               width: 10, height: 10, borderRadius: 3,
@@ -63,7 +63,7 @@ export function SeatMap({ sessions = [] }) {
           </div>
         ))}
         <div style={{ marginLeft: 'auto', fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>
-          {completedCount} / {seats.filter(s => s.status !== 'empty').length} uçuş
+          {completedCount} / {seats.filter(s => s.status !== 'empty').length} flights
         </div>
       </div>
 
@@ -80,7 +80,7 @@ export function SeatMap({ sessions = [] }) {
 
         {/* Day labels (top) */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
-          {['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map((d, i) => (
+          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d, i) => (
             <div key={i} style={{ textAlign: 'center', fontSize: 10, color: '#475569', fontWeight: 600, letterSpacing: '0.05em' }}>
               {d}
             </div>
@@ -101,7 +101,7 @@ export function SeatMap({ sessions = [] }) {
                     initial={{ opacity: 0, scale: 0.7 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: (col * 6 + row) * 0.008 }}
-                    title={seat.status === 'completed' ? `${seat.date} · Tamamlandı` : seat.status === 'missed' ? 'Kaçırıldı' : 'Boş'}
+                    title={seat.status === 'completed' ? `${seat.date} · Completed` : seat.status === 'missed' ? 'Missed' : 'Empty'}
                     style={{
                       height: 22, borderRadius: 5,
                       background: sc.bg,
@@ -119,7 +119,7 @@ export function SeatMap({ sessions = [] }) {
 
         {/* Row labels */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 8 }}>
-          <span style={{ fontSize: 10, color: '#334155' }}>Son 7 gün · Her satır = 1 oturum</span>
+          <span style={{ fontSize: 10, color: '#334155' }}>Last 7 days · Each row = 1 session</span>
         </div>
       </div>
     </div>

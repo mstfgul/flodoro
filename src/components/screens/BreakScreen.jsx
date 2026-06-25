@@ -63,7 +63,7 @@ function BoardingPass({ session, isDark }) {
         </div>
         <span className="text-[10px] px-2 py-0.5 rounded-full border font-mono tracking-wider"
           style={{ color: '#f4a261', borderColor: 'rgba(244,162,97,0.3)', background: 'rgba(244,162,97,0.08)' }}>
-          TAMAMLANDI
+          COMPLETED
         </span>
       </div>
 
@@ -103,17 +103,17 @@ function BoardingPass({ session, isDark }) {
       {/* Footer */}
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-[10px]" style={{ color: '#64748b' }}>ÇALIŞMA</div>
+          <div className="text-[10px]" style={{ color: '#64748b' }}>WORK</div>
           <div className="text-sm font-semibold font-mono" style={{ color: isDark ? '#e0e6f0' : '#0f172a' }}>
             {formatDuration(session.duration)}
           </div>
         </div>
         <div className="text-center">
-          <div className="text-[10px]" style={{ color: '#64748b' }}>DURUM</div>
-          <div className="text-xs font-semibold text-green-400">İNDİ ✓</div>
+          <div className="text-[10px]" style={{ color: '#64748b' }}>STATUS</div>
+          <div className="text-xs font-semibold text-green-400">LANDED ✓</div>
         </div>
         <div className="text-right">
-          <div className="text-[10px]" style={{ color: '#64748b' }}>{session.seat ? 'KOLTUK' : 'SINIF'}</div>
+          <div className="text-[10px]" style={{ color: '#64748b' }}>{session.seat ? 'SEAT' : 'CLASS'}</div>
           <div className="text-sm font-semibold font-mono" style={{ color: isDark ? '#e0e6f0' : '#0f172a' }}>
             {session.seat || 'FOCUS'}
           </div>
@@ -159,7 +159,7 @@ export function BreakScreen() {
         if (next >= totalBreak) {
           setStatus('completed');
           playBreakEndChime();
-          notify('Mola Bitti! 🔔', 'Yeni uçuşa hazır mısın?');
+          notify('Break Over! 🔔', 'Ready for a new flight?');
           return totalBreak;
         }
         return next;
@@ -198,9 +198,9 @@ export function BreakScreen() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="text-center">
-          <h1 className="text-2xl font-bold mb-1" style={{ color: isDark ? '#fff' : '#0f172a' }}>İniş Yaptın!</h1>
+          <h1 className="text-2xl font-bold mb-1" style={{ color: isDark ? '#fff' : '#0f172a' }}>You Landed!</h1>
           <p className="text-sm" style={{ color: isDark ? '#64748b' : '#475569' }}>
-            {session ? formatDuration(session.duration) : ''} boyunca odaklandın 🎯
+            You focused for {session ? formatDuration(session.duration) : ''} 🎯
           </p>
         </motion.div>
 
@@ -220,12 +220,12 @@ export function BreakScreen() {
           {status === 'completed' ? (
             <div className="text-center">
               <div className="text-4xl mb-2">🔔</div>
-              <div className="text-lg font-semibold" style={{ color: '#f4a261' }}>Mola bitti!</div>
-              <div className="text-sm mt-1" style={{ color: isDark ? '#94a3b8' : '#475569' }}>Yeni uçuşa hazır mısın?</div>
+              <div className="text-lg font-semibold" style={{ color: '#f4a261' }}>Break is over!</div>
+              <div className="text-sm mt-1" style={{ color: isDark ? '#94a3b8' : '#475569' }}>Ready for a new flight?</div>
             </div>
           ) : (
             <div className="text-center">
-              <div className="text-xs uppercase tracking-wider mb-2" style={{ color: '#64748b' }}>Mola Süresi</div>
+              <div className="text-xs uppercase tracking-wider mb-2" style={{ color: '#64748b' }}>Break Time</div>
               <div className="timer-display text-5xl font-bold text-[#00b4d8] text-glow-blue mb-4">
                 {formatTime(remaining)}
               </div>
@@ -244,7 +244,7 @@ export function BreakScreen() {
                     className="text-xs transition-colors px-3 py-1 rounded-lg hover:bg-white/5"
                     style={{ color: '#64748b' }}
                   >
-                    ⏸ Duraklat
+                    ⏸ Pause
                   </button>
                 ) : (
                   <button
@@ -252,7 +252,7 @@ export function BreakScreen() {
                     className="text-xs transition-colors px-3 py-1 rounded-lg hover:bg-white/5"
                     style={{ color: '#00b4d8' }}
                   >
-                    ▶ Devam
+                    ▶ Resume
                   </button>
                 )}
               </div>
@@ -268,7 +268,7 @@ export function BreakScreen() {
           className="flex flex-col sm:flex-row gap-3 w-full"
         >
           <Button onClick={newSession} variant="primary" size="lg" className="flex-1">
-            ✈ Bağlantı Uçuşu
+            ✈ Connecting Flight
           </Button>
           <Button
             onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'home' })}
@@ -276,7 +276,7 @@ export function BreakScreen() {
             size="lg"
             className="flex-1"
           >
-            Ana Sayfa
+            Home
           </Button>
         </motion.div>
       </motion.div>

@@ -50,10 +50,10 @@ export function FlightTimer({ elapsed, remaining, totalSeconds, progress, status
           </span>
           <span className="text-xs text-[#64748b] mt-0.5">
             {status === 'paused'
-              ? 'duraklatıldı'
+              ? 'paused'
               : isRealistic
-              ? 'geçti'
-              : 'kaldı'}
+              ? 'elapsed'
+              : 'remaining'}
           </span>
         </div>
       </div>
@@ -63,14 +63,14 @@ export function FlightTimer({ elapsed, remaining, totalSeconds, progress, status
         {isRealistic ? (
           <div className="text-center">
             <span className="text-xs text-[#475569]">
-              Gerçek zamanlı mod — iniş bekleniyor
+              Real-time mode — awaiting landing
             </span>
           </div>
         ) : (
           <>
             <div className="flex justify-between text-xs text-[#64748b] mb-1.5">
-              <span>%{Math.round(progress * 100)} tamamlandı</span>
-              <span>{formatTime(totalSeconds)} toplam</span>
+              <span>{Math.round(progress * 100)}% complete</span>
+              <span>{formatTime(totalSeconds)} total</span>
             </div>
             <div className={`h-1.5 rounded-full overflow-hidden ${theme === 'light' ? 'bg-black/8' : 'bg-white/5'}`}>
               <motion.div
