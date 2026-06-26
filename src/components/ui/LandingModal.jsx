@@ -1,9 +1,9 @@
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatTime } from '../../utils/format';
-import { Button } from './Button';
 
 export function LandingModal({ open, elapsed, onBreak, onStay }) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -74,6 +74,7 @@ export function LandingModal({ open, elapsed, onBreak, onStay }) {
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

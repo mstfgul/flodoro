@@ -200,8 +200,11 @@ export function WorkScreen() {
 
   const handleLandingBreak = () => {
     setShowLandingModal(false);
+    playLanding();
+    stopEngine();
+    if (isCockpit) stopCockpitMode(); else stopCabinAmbience();
+    stopAtcRadio();
     notify('Landed! 🛬', 'Break time started.');
-    // Realistic + auto-detected landing = fully completed; manual early land = cancelled (won't count in stats)
     const isActualLanding = isRealistic && landingDetected.current;
     saveSession(isActualLanding ? 'completed' : 'cancelled', !isActualLanding);
     dispatch({ type: 'GO_BREAK' });

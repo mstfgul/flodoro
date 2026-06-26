@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { Button } from '../ui/Button';
 import { formatTime, formatDuration } from '../../utils/format';
 import { playBreakEndChime } from '../../services/ambient';
-import { playLanding, startAirportAmbience, stopAirportAmbience } from '../../services/sounds';
+import { startAirportAmbience, stopAirportAmbience } from '../../services/sounds';
 import { notify } from '../../utils/notifications';
 
 const CONFETTI_CHARS = ['✈', '🌟', '🎯', '⭐', '🛬', '✨'];
@@ -145,8 +145,7 @@ export function BreakScreen() {
   useEffect(() => {
     if (!dingPlayed.current) {
       dingPlayed.current = true;
-      setTimeout(() => playLanding(), 400);
-      if (soundEnabled) setTimeout(() => startAirportAmbience(0.15), 1200);
+      if (soundEnabled) setTimeout(() => startAirportAmbience(0.15), 600);
     }
     return () => stopAirportAmbience();
   }, []); // eslint-disable-line
