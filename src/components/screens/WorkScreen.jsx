@@ -335,10 +335,10 @@ export function WorkScreen() {
 
   // helper: panel glass style
   const panelStyle = isDark
-    ? { background: 'rgba(4,7,18,0.88)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }
-    : { background: 'rgba(248,252,255,0.93)', border: '1px solid rgba(0,0,0,0.09)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' };
-  const monoLabel = { fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.16em', color: '#334155' };
-  const progressColor = isRealistic ? '#00b4d8' : progress < 0.5 ? '#00b4d8' : progress < 0.8 ? '#48cae4' : '#f4a261';
+    ? { background: '#08101E', border: '1px solid #131D30' }
+    : { background: 'rgba(248,252,255,0.98)', border: '1px solid rgba(0,0,0,0.09)' };
+  const monoLabel = { fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: '0.18em', color: '#2A3450', textTransform: 'uppercase' };
+  const progressColor = isRealistic ? '#00b4d8' : progress < 0.5 ? '#00b4d8' : progress < 0.8 ? '#48cae4' : '#E8A030';
 
   return (
     <div className="h-screen relative overflow-hidden">
@@ -371,10 +371,10 @@ export function WorkScreen() {
       <motion.div
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="absolute top-0 left-0 right-0 flex items-center gap-1.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 border-b"
+        className="absolute top-0 left-0 right-0 flex items-center gap-1.5 sm:gap-3 px-3 sm:px-4 border-b"
         style={isDark
-          ? { zIndex: 900, background: 'rgba(4,7,18,0.82)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.05)' }
-          : { zIndex: 900, background: 'rgba(248,252,255,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: 'rgba(0,0,0,0.08)' }
+          ? { zIndex: 900, background: 'rgba(4,6,14,0.97)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: '#111828', paddingTop: 'max(10px, env(safe-area-inset-top, 10px))', paddingBottom: 10 }
+          : { zIndex: 900, background: 'rgba(248,252,255,0.97)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: 'rgba(0,0,0,0.08)', paddingTop: 'max(10px, env(safe-area-inset-top, 10px))', paddingBottom: 10 }
         }
       >
         <button
@@ -385,7 +385,14 @@ export function WorkScreen() {
           Flo<span className="text-[#00b4d8]">doro</span>
         </button>
 
-        <div className="flex items-center gap-1.5 ml-1 sm:ml-2 min-w-0 flex-shrink text-sm">
+        {/* Mobile compact route — visible only on mobile */}
+        <div className="sm:hidden flex items-center gap-1 ml-1">
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700, color: '#00b4d8', lineHeight: 1 }}>{origin?.code}</span>
+          <span style={{ color: '#2A3450', fontSize: 10 }}>→</span>
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700, color: '#E8A030', lineHeight: 1 }}>{destination?.code}</span>
+        </div>
+
+        <div className="hidden sm:flex items-center gap-1.5 ml-1 sm:ml-2 min-w-0 flex-shrink text-sm">
           {/* Mobile: just ICAO codes */}
           <span className="sm:hidden font-mono text-xs font-bold" style={{ color: '#00b4d8' }}>{origin?.code}</span>
           <span className="sm:hidden text-[#475569] text-xs">→</span>
@@ -510,29 +517,26 @@ export function WorkScreen() {
             {soundMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
 
-          {/* Theme toggle */}
-          <button
-            onClick={() => dispatch({ type: 'SET_THEME', payload: isDark ? 'light' : 'dark' })}
+          <button onClick={() => dispatch({ type: 'SET_THEME', payload: isDark ? 'light' : 'dark' })}
             title={isDark ? 'Light mode' : 'Dark mode'}
-            className="p-2 rounded-lg transition-all"
+            className="hidden sm:block p-2 rounded-lg transition-all"
             style={{ background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
             onMouseEnter={e => { e.currentTarget.style.color = isDark ? '#fbbf24' : '#0f172a'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
             onMouseLeave={e => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = 'transparent'; }}
           >
             {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
-
           <button onClick={() => safeNavigate('stats')} className="hidden sm:block p-2 hover:bg-white/5 rounded-lg text-[#64748b] hover:text-white transition-colors">
             <BarChart2 size={16} />
           </button>
-          <button onClick={() => setShowSettings(true)} className="p-2 hover:bg-white/5 rounded-lg text-[#64748b] hover:text-white transition-colors">
+          <button onClick={() => setShowSettings(true)} className="p-2 hover:bg-white/5 rounded-lg text-[#64748b] hover:text-white transition-colors" style={{ minWidth: 36, minHeight: 36 }}>
             <Settings size={16} />
           </button>
         </div>
       </motion.div>
 
       {/* ── Bottom HUD ────────────────────────────────────────── */}
-      <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-1.5 px-2 sm:px-3" style={{ zIndex: 800 }}>
+      <div className="absolute left-0 right-0 flex flex-col items-center gap-1.5 px-2 sm:px-3" style={{ zIndex: 800, bottom: 'max(16px, env(safe-area-inset-bottom, 16px))' }}>
         <AnimatePresence>
           {hudOpen && (
             <motion.div
@@ -547,7 +551,7 @@ export function WorkScreen() {
               {/* LEFT — Origin (hidden on mobile) */}
               <div className="hidden sm:block rounded-2xl p-3.5 flex-1 min-w-0" style={panelStyle}>
                 <div style={monoLabel} className="mb-2">DEPARTURE</div>
-                <div style={{ fontFamily: 'monospace', fontSize: 28, fontWeight: 900, color: '#00b4d8', lineHeight: 1 }}>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 34, fontWeight: 700, color: '#00b4d8', lineHeight: 1 }}>
                   {origin?.code || '???'}
                 </div>
                 <div style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#475569', marginTop: 3 }} className="truncate">
@@ -579,19 +583,24 @@ export function WorkScreen() {
               {/* CENTER — Timer + controls */}
               <div className="flex-1 rounded-2xl p-3.5 flex flex-col items-center gap-2.5 min-w-0" style={panelStyle}>
                 {/* Mobile-only compact route */}
-                <div className="sm:hidden flex items-center gap-3 w-full justify-center pb-1 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
-                  <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 900, color: '#00b4d8' }}>{origin?.code}</span>
-                  <span style={{ color: '#475569', fontSize: 12 }}>✈</span>
-                  <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 900, color: '#f4a261' }}>{destination?.code}</span>
-                  {weather.origin && <span style={{ fontSize: 10, color: '#64748b', marginLeft: 4 }}>{weather.origin.emoji} {weather.origin.temp}°C</span>}
-                  {weather.dest && <span style={{ fontSize: 10, color: '#64748b' }}>→ {weather.dest.emoji} {weather.dest.temp}°C</span>}
+                <div className="sm:hidden flex items-center gap-2 w-full justify-center pb-2 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 18, fontWeight: 700, color: '#00b4d8', lineHeight: 1 }}>{origin?.code}</span>
+                  <motion.span animate={{ x: [0, 4, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }} style={{ color: '#2A3450', fontSize: 13 }}>✈</motion.span>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 18, fontWeight: 700, color: '#E8A030', lineHeight: 1 }}>{destination?.code}</span>
+                  {(weather.origin || weather.dest) && (
+                    <span style={{ fontSize: 10, color: '#3C4566', marginLeft: 6 }}>
+                      {weather.origin ? `${weather.origin.emoji} ${weather.origin.temp}°` : ''}
+                      {weather.origin && weather.dest ? ' → ' : ''}
+                      {weather.dest ? `${weather.dest.emoji} ${weather.dest.temp}°` : ''}
+                    </span>
+                  )}
                 </div>
                 {/* Status chip */}
                 <div className="flex items-center gap-2 w-full justify-between">
                   <span style={{ ...monoLabel }}>
                     {isRealistic ? 'LIVE TRACK' : isPaused ? 'PAUSED' : 'EN ROUTE'}
                   </span>
-                  <span style={{ fontFamily: 'monospace', fontSize: 9, color: isPaused ? '#f59e0b' : '#22c55e' }}>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: isPaused ? '#E8A030' : '#00b4d8' }}>
                     {isPaused ? '● HOLD' : '● ACT'}
                   </span>
                 </div>
@@ -601,10 +610,10 @@ export function WorkScreen() {
                   <span
                     className="timer-display tabular-nums"
                     style={{
-                      fontSize: 36, fontWeight: 800, lineHeight: 1,
-                      color: isPaused ? '#f59e0b' : (isDark ? '#ffffff' : '#0f172a'),
-                      fontFamily: 'monospace',
-                      textShadow: isPaused ? '0 0 20px rgba(245,158,11,0.4)' : '0 0 20px rgba(0,180,216,0.3)',
+                      fontSize: 58, fontWeight: 700, lineHeight: 1,
+                      color: isPaused ? '#E8A030' : (isDark ? '#DDE3F5' : '#0f172a'),
+                      fontFamily: 'JetBrains Mono, monospace',
+                      letterSpacing: '-0.02em',
                     }}
                   >
                     {formatTime(isRealistic ? elapsed : (remaining ?? 0))}
@@ -636,12 +645,12 @@ export function WorkScreen() {
                     onClick={goBreak}
                     style={{
                       width: '100%', height: 44, background: 'transparent',
-                      border: '1px solid rgba(251,191,36,0.4)', borderRadius: 8,
-                      fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
-                      letterSpacing: '0.12em', color: '#fbbf24', cursor: 'pointer', transition: 'all 0.15s',
+                      border: '1px solid rgba(232,160,48,0.4)', borderRadius: 8,
+                      fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 700,
+                      letterSpacing: '0.12em', color: '#E8A030', cursor: 'pointer', transition: 'all 0.15s',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(251,191,36,0.08)'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.7)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.4)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,160,48,0.08)'; e.currentTarget.style.borderColor = 'rgba(232,160,48,0.7)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(232,160,48,0.4)'; }}
                   >
                     ▼ LAND &amp; BREAK
                   </button>
@@ -665,13 +674,13 @@ export function WorkScreen() {
                       onClick={() => setShowLandingModal(true)}
                       style={{
                         flex: 1, height: 44, background: 'transparent',
-                        border: '1px solid rgba(34,197,94,0.35)', borderRadius: 8,
-                        fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
-                        letterSpacing: '0.1em', color: '#22c55e',
+                        border: '1px solid rgba(232,160,48,0.35)', borderRadius: 8,
+                        fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700,
+                        letterSpacing: '0.1em', color: '#E8A030',
                         cursor: 'pointer', transition: 'all 0.15s',
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.07)'; e.currentTarget.style.borderColor = 'rgba(34,197,94,0.6)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(34,197,94,0.35)'; }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,160,48,0.08)'; e.currentTarget.style.borderColor = 'rgba(232,160,48,0.6)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(232,160,48,0.35)'; }}
                     >
                       ▼ LAND
                     </button>
@@ -681,7 +690,7 @@ export function WorkScreen() {
                 {/* Abort — subtle text link */}
                 <button
                   onClick={stop}
-                  style={{ background: 'none', border: 'none', fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.12em', color: '#334155', cursor: 'pointer', transition: 'color 0.15s', padding: '6px 0', minHeight: 32 }}
+                  style={{ background: 'none', border: 'none', fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.12em', color: '#334155', cursor: 'pointer', transition: 'color 0.15s', padding: '12px 0', minHeight: 44, width: '100%' }}
                   onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; }}
                   onMouseLeave={e => { e.currentTarget.style.color = '#334155'; }}
                 >
@@ -692,7 +701,7 @@ export function WorkScreen() {
               {/* RIGHT — Destination (hidden on mobile) */}
               <div className="hidden sm:block rounded-2xl p-3.5 flex-1 min-w-0" style={{ ...panelStyle, textAlign: 'right' }}>
                 <div style={{ ...monoLabel, textAlign: 'right' }} className="mb-2">ARRIVAL</div>
-                <div style={{ fontFamily: 'monospace', fontSize: 28, fontWeight: 900, color: '#f4a261', lineHeight: 1 }}>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 34, fontWeight: 700, color: '#E8A030', lineHeight: 1 }}>
                   {destination?.code || '???'}
                 </div>
                 <div style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#475569', marginTop: 3 }} className="truncate">
@@ -744,13 +753,13 @@ export function WorkScreen() {
               <div style={{ fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.1em', color: '#475569', lineHeight: 1 }}>
                 {origin?.code} <span style={{ color: '#334155' }}>→</span> {destination?.code}
               </div>
-              <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: isDark ? '#fff' : '#0f172a', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 28, fontWeight: 700, color: isDark ? '#DDE3F5' : '#0f172a', letterSpacing: '-0.02em', lineHeight: 1 }}>
                 {formatTime(isRealistic ? elapsed : (remaining ?? 0))}
               </span>
             </div>
             <div style={{ width: 1, height: 18, background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }} />
             {isRealistic ? (
-              <button onClick={goBreak} style={{ background: 'none', border: 'none', fontFamily: 'monospace', fontSize: 11, color: '#fbbf24', cursor: 'pointer', fontWeight: 700 }}>
+              <button onClick={goBreak} style={{ background: 'none', border: 'none', fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#E8A030', cursor: 'pointer', fontWeight: 700 }}>
                 ▼ LAND
               </button>
             ) : (
@@ -758,7 +767,7 @@ export function WorkScreen() {
                 <button onClick={isPaused ? resume : pause} style={{ background: 'none', border: 'none', fontFamily: 'monospace', fontSize: 12, color: isPaused ? '#00b4d8' : '#64748b', cursor: 'pointer', fontWeight: 700 }}>
                   {isPaused ? '▶' : '‖'}
                 </button>
-                <button onClick={() => setShowLandingModal(true)} style={{ background: 'none', border: 'none', fontFamily: 'monospace', fontSize: 11, color: '#22c55e', cursor: 'pointer', fontWeight: 700 }}>
+                <button onClick={() => setShowLandingModal(true)} style={{ background: 'none', border: 'none', fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#E8A030', cursor: 'pointer', fontWeight: 700 }}>
                   ▼ LAND
                 </button>
               </>
@@ -772,7 +781,7 @@ export function WorkScreen() {
           style={{
             background: isDark ? 'rgba(4,7,18,0.7)' : 'rgba(248,252,255,0.85)',
             border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
-            borderRadius: '50%', width: 26, height: 26,
+            borderRadius: '50%', width: 40, height: 40,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', backdropFilter: 'blur(12px)', transition: 'all 0.2s',
             color: '#475569',
@@ -780,7 +789,7 @@ export function WorkScreen() {
           onMouseEnter={e => { e.currentTarget.style.color = '#00b4d8'; e.currentTarget.style.borderColor = 'rgba(0,180,216,0.4)'; }}
           onMouseLeave={e => { e.currentTarget.style.color = '#475569'; e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'; }}
         >
-          {hudOpen ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+          {hudOpen ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
         </button>
       </div>
 

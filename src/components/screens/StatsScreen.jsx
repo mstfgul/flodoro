@@ -8,48 +8,77 @@ import { HistoryMap } from '../map/HistoryMap';
 import { SeatMap } from '../ui/SeatMap';
 
 function BarChart({ data }) {
+  const [selected, setSelected] = useState(null);
   if (!data || data.length === 0) return null;
   const maxMin = Math.max(...data.map((d) => d.minutes), 1);
   const recent = data.slice(-14);
+  const today = new Date().toISOString().slice(0, 10);
+  const sel = selected !== null ? recent[selected] : null;
 
   return (
     <div className="w-full">
       <div className="flex items-end gap-1 h-28">
         {recent.map((d, i) => {
           const pct = d.minutes / maxMin;
-          const isToday = d.date === new Date().toISOString().slice(0, 10);
+          const isToday = d.date === today;
+          const isSel = selected === i;
           return (
-            <div key={d.date} className="flex-1 flex flex-col items-center gap-1 group relative">
+            <div
+              key={d.date}
+              className="flex-1 flex flex-col items-center gap-1 relative cursor-pointer"
+              onClick={() => setSelected(isSel ? null : i)}
+            >
               <div className="w-full relative flex items-end" style={{ height: 88 }}>
                 <motion.div
                   initial={{ height: 0 }}
                   animate={{ height: `${Math.max(pct * 88, d.minutes > 0 ? 4 : 1)}px` }}
                   transition={{ delay: i * 0.03, duration: 0.5, ease: 'easeOut' }}
-                  className={`w-full rounded-t-sm ${
-                    isToday ? 'bg-[#f4a261]' : d.minutes > 0 ? 'bg-[#00b4d8]' : 'bg-white/5'
-                  }`}
-                  style={{ position: 'absolute', bottom: 0, opacity: d.minutes > 0 ? 1 : 0.3 }}
+                  style={{
+                    position: 'absolute', bottom: 0,
+                    width: '100%', borderRadius: '2px 2px 0 0',
+                    background: isSel ? '#fff' : isToday ? '#f4a261' : d.minutes > 0 ? '#00b4d8' : 'rgba(255,255,255,0.05)',
+                    opacity: d.minutes > 0 ? 1 : 0.3,
+                    transition: 'background 0.15s',
+                  }}
                 />
               </div>
-              {d.minutes > 0 && (
-                <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block z-10 whitespace-nowrap">
-                  <div className="glass border border-white/10 rounded-lg px-2 py-1 text-xs text-white">
-                    <div className="font-medium">{d.date.slice(5)}</div>
-                    <div className="text-[#00b4d8]">{d.minutes} min</div>
-                    <div className="text-[#64748b]">{d.sessions} flights</div>
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}
       </div>
+
+      {/* Date labels */}
       <div className="flex gap-1 mt-1">
         {recent.map((d, i) => (
           <div key={d.date} className="flex-1 text-center">
             {i % 3 === 0 && <span className="text-[9px] text-[#374151]">{d.date.slice(8)}</span>}
           </div>
         ))}
+      </div>
+
+      {/* Tap info — works on both mobile and desktop */}
+      <div style={{ minHeight: 48, marginTop: 10 }}>
+        {sel ? (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-between rounded-xl px-4 py-3"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <div>
+              <div className="text-xs font-semibold text-white">{sel.date}</div>
+              <div className="text-[10px] text-[#64748b] mt-0.5">{sel.sessions} flight{sel.sessions !== 1 ? 's' : ''}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-bold text-[#00b4d8]">{sel.minutes} min</div>
+              <div className="text-[10px] text-[#64748b]">{Math.floor(sel.minutes / 60)}h {sel.minutes % 60}m</div>
+            </div>
+          </motion.div>
+        ) : (
+          <div className="text-[10px] text-[#2A3450] text-center pt-3">
+            Tap a bar for details
+          </div>
+        )}
       </div>
     </div>
   );
@@ -138,17 +167,29 @@ export function StatsScreen() {
   const totalMins = stats.total_minutes % 60;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex items-center gap-4 px-5 py-4 glass border-b border-white/5">
+    <div className="min-h-screen flex flex-col" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
+      <div className="flex items-center gap-3 px-4 sm:px-5 border-b"
+        style={{
+          background: 'rgba(4,6,14,0.97)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          borderColor: '#111828', position: 'sticky', top: 0, zIndex: 50,
+          paddingTop: 'max(12px, env(safe-area-inset-top, 12px))', paddingBottom: 12,
+        }}>
         <button
           onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'home' })}
-          className="p-2 hover:bg-white/5 rounded-lg text-[#64748b] hover:text-white transition-colors"
+          style={{
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'transparent', border: '1px solid #131D30',
+            cursor: 'pointer', color: '#3C4566', transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#DDE3F5'; e.currentTarget.style.borderColor = '#1E2540'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#3C4566'; e.currentTarget.style.borderColor = '#131D30'; }}
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
         </button>
         <div>
-          <h1 className="text-base font-semibold text-white">Statistics</h1>
-          <p className="text-xs text-[#64748b]">All time</p>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#DDE3F5' }}>Statistics</div>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#2A3450', letterSpacing: '0.08em', marginTop: 2 }}>ALL TIME</div>
         </div>
       </div>
 

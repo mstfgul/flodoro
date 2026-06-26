@@ -163,13 +163,13 @@ export function SettingsModal({ open, onClose }) {
 
                 {/* ── Mola Süresi ── */}
                 <Section icon={Clock} label="Break Duration">
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
                     {BREAK_OPTIONS.map(min => (
                       <button
                         key={min}
                         onClick={() => update('breakDuration', min)}
                         style={{
-                          flex: 1, padding: '8px 0',
+                          flex: '1 1 52px', minWidth: 52, padding: '10px 0',
                           borderRadius: 10,
                           fontSize: 13, fontWeight: 600,
                           cursor: 'pointer',
@@ -181,6 +181,7 @@ export function SettingsModal({ open, onClose }) {
                             : 'rgba(255,255,255,0.04)',
                           color: settings.breakDuration === min ? '#00b4d8' : '#64748b',
                           transition: 'all 0.15s',
+                          minHeight: 44,
                         }}
                       >
                         {min}<span style={{ fontSize: 10, marginLeft: 2, opacity: 0.7 }}>m</span>

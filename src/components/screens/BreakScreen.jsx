@@ -7,23 +7,6 @@ import { playBreakEndChime } from '../../services/ambient';
 import { startAirportAmbience, stopAirportAmbience } from '../../services/sounds';
 import { notify } from '../../utils/notifications';
 
-const CONFETTI_CHARS = ['✈', '🌟', '🎯', '⭐', '🛬', '✨'];
-
-function Particle({ char, delay }) {
-  const x = Math.random() * 100;
-  const duration = 3 + Math.random() * 2;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -20, x: `${x}vw` }}
-      animate={{ opacity: [0, 1, 1, 0], y: '110vh' }}
-      transition={{ duration, delay, ease: 'easeIn' }}
-      style={{ position: 'fixed', top: 0, fontSize: `${14 + Math.random() * 16}px`, pointerEvents: 'none', zIndex: 5 }}
-    >
-      {char}
-    </motion.div>
-  );
-}
-
 function BoardingPass({ session, isDark }) {
   if (!session) return null;
   const { origin, destination, flightData } = session;
@@ -129,13 +112,6 @@ export function BreakScreen() {
   const totalBreak = settings.breakDuration * 60;
   const [elapsed, setElapsed] = useState(0);
   const [status, setStatus] = useState('running');
-  const [particles] = useState(() =>
-    Array.from({ length: 14 }, (_, i) => ({
-      id: i,
-      char: CONFETTI_CHARS[i % CONFETTI_CHARS.length],
-      delay: i * 0.2,
-    }))
-  );
   const ref = useRef(null);
   const dingPlayed = useRef(false);
   const isDark = state.theme !== 'light';
@@ -172,34 +148,31 @@ export function BreakScreen() {
   const newSession = useCallback(() => dispatch({ type: 'RESET' }), [dispatch]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 relative overflow-hidden">
-      {particles.map((p) => (
-        <Particle key={p.id} char={p.char} delay={p.delay} />
-      ))}
-
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-[#00b4d8]/8 blur-3xl" />
-      </div>
-
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 relative overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', damping: 20 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         className="flex flex-col items-center gap-5 z-10 w-full max-w-md"
       >
         <motion.div
-          initial={{ y: -60, rotate: -15 }}
-          animate={{ y: 0, rotate: 0 }}
-          transition={{ type: 'spring', damping: 15, delay: 0.2 }}
-          className="text-6xl"
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', damping: 18, delay: 0.1 }}
+          style={{ fontSize: 48, lineHeight: 1 }}
         >
           🛬
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="text-center">
-          <h1 className="text-2xl font-bold mb-1" style={{ color: isDark ? '#fff' : '#0f172a' }}>You Landed!</h1>
-          <p className="text-sm" style={{ color: isDark ? '#64748b' : '#475569' }}>
-            You focused for {session ? formatDuration(session.duration) : ''} 🎯
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-center">
+          <h1 style={{
+            fontSize: 28, fontWeight: 700, marginBottom: 4,
+            color: isDark ? '#DDE3F5' : '#0f172a',
+            fontFamily: "'Space Grotesk', Inter, system-ui, sans-serif",
+            letterSpacing: '-0.02em',
+          }}>Landed.</h1>
+          <p style={{ fontSize: 13, color: isDark ? '#3C4566' : '#475569' }}>
+            {session ? formatDuration(session.duration) : ''} of focused flight
           </p>
         </motion.div>
 
@@ -210,22 +183,22 @@ export function BreakScreen() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="rounded-2xl p-6 w-full border"
+          className="rounded-2xl p-6 w-full"
           style={isDark
-            ? { background: 'rgba(7,11,26,0.8)', borderColor: 'rgba(255,255,255,0.08)' }
-            : { background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(0,0,0,0.08)' }
+            ? { background: '#08101E', border: '1px solid #131D30' }
+            : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.08)' }
           }
         >
           {status === 'completed' ? (
             <div className="text-center">
-              <div className="text-4xl mb-2">🔔</div>
-              <div className="text-lg font-semibold" style={{ color: '#f4a261' }}>Break is over!</div>
-              <div className="text-sm mt-1" style={{ color: isDark ? '#94a3b8' : '#475569' }}>Ready for a new flight?</div>
+              <div style={{ fontSize: 40, marginBottom: 10 }}>🔔</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#E8A030', fontFamily: "'Space Grotesk', Inter, system-ui, sans-serif" }}>Break over.</div>
+              <div style={{ fontSize: 13, marginTop: 4, color: isDark ? '#3C4566' : '#475569' }}>Ready for a new flight?</div>
             </div>
           ) : (
             <div className="text-center">
-              <div className="text-xs uppercase tracking-wider mb-2" style={{ color: '#64748b' }}>Break Time</div>
-              <div className="timer-display text-5xl font-bold text-[#00b4d8] text-glow-blue mb-4">
+              <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: '0.22em', color: '#2A3450', textTransform: 'uppercase', marginBottom: 10 }}>BREAK TIME</div>
+              <div className="timer-display" style={{ fontSize: 68, fontWeight: 700, color: '#00b4d8', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 16 }}>
                 {formatTime(remaining)}
               </div>
               <div className="w-48 h-1.5 rounded-full overflow-hidden mx-auto"

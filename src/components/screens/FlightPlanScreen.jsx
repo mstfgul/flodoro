@@ -5,10 +5,10 @@ import { useApp } from '../../context/AppContext';
 import { airports } from '../../data/cityPairs';
 
 const STATUS_STYLE = {
-  pending:   { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.2)', label: 'Pending'  },
-  active:    { color: '#00b4d8', bg: 'rgba(0,180,216,0.12)',  border: 'rgba(0,180,216,0.35)',  label: 'Active'   },
-  completed: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)',   border: 'rgba(34,197,94,0.25)',  label: 'Done ✓'   },
-  missed:    { color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', label: 'Missed'   },
+  pending:   { color: '#3C4566', bg: 'rgba(60,69,102,0.1)',   border: 'rgba(60,69,102,0.2)',   label: 'PENDING'  },
+  active:    { color: '#00b4d8', bg: 'rgba(0,180,216,0.12)',  border: 'rgba(0,180,216,0.35)',  label: 'ACTIVE'   },
+  completed: { color: '#E8A030', bg: 'rgba(232,160,48,0.12)', border: 'rgba(232,160,48,0.3)',  label: 'DONE'     },
+  missed:    { color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', label: 'MISSED'   },
 };
 
 function AirportSelect({ value, onChange, label }) {
@@ -16,24 +16,27 @@ function AirportSelect({ value, onChange, label }) {
   const [open, setOpen] = useState(false);
   const ap = airports.find(a => a.code === value);
   const filtered = airports.filter(a =>
-    !search || a.code.toLowerCase().includes(search.toLowerCase()) ||
+    !search ||
+    a.code.toLowerCase().includes(search.toLowerCase()) ||
     a.city.toLowerCase().includes(search.toLowerCase())
   ).slice(0, 8);
 
   return (
     <div style={{ position: 'relative', flex: 1 }}>
-      <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: '0.16em', color: '#3C4566', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
       <button
         onClick={() => setOpen(o => !o)}
         style={{
-          width: '100%', padding: '8px 12px', borderRadius: 10, textAlign: 'left',
-          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-          color: ap ? '#e0e6f0' : '#475569', fontSize: 13, cursor: 'pointer',
+          width: '100%', padding: '9px 12px', borderRadius: 10, textAlign: 'left',
+          background: '#08101E', border: `1px solid ${open ? 'rgba(0,180,216,0.4)' : '#131D30'}`,
+          color: ap ? '#DDE3F5' : '#3C4566', fontSize: 13, cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          transition: 'border-color 0.15s',
+          fontFamily: 'JetBrains Mono, monospace', fontWeight: ap ? 700 : 400,
         }}
       >
-        <span>{ap ? `${ap.code} · ${ap.city}` : 'Select...'}</span>
-        <ChevronRight size={12} style={{ opacity: 0.5, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }} />
+        <span>{ap ? `${ap.code} · ${ap.city}` : 'Select…'}</span>
+        <ChevronRight size={12} style={{ opacity: 0.4, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0 }} />
       </button>
       <AnimatePresence>
         {open && (
@@ -41,38 +44,45 @@ function AirportSelect({ value, onChange, label }) {
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.14 }}
             style={{
               position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-              background: 'rgba(9,14,30,0.98)', border: '1px solid rgba(255,255,255,0.1)',
+              background: '#0C0F1C', border: '1px solid #1A1D2E',
               borderRadius: 10, overflow: 'hidden', marginTop: 4,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
             }}
           >
             <input
               autoFocus
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search..."
+              placeholder="Search…"
               style={{
-                width: '100%', padding: '8px 12px', background: 'rgba(255,255,255,0.06)',
-                border: 'none', borderBottom: '1px solid rgba(255,255,255,0.07)',
-                color: '#e0e6f0', fontSize: 12, outline: 'none',
-                boxSizing: 'border-box',
+                width: '100%', padding: '9px 12px',
+                background: 'rgba(255,255,255,0.04)',
+                border: 'none', borderBottom: '1px solid #1A1D2E',
+                color: '#DDE3F5', fontSize: 12, outline: 'none',
+                boxSizing: 'border-box', fontFamily: 'JetBrains Mono, monospace',
               }}
             />
             {filtered.map(a => (
               <button key={a.code}
                 onClick={() => { onChange(a.code); setOpen(false); setSearch(''); }}
                 style={{
-                  display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left',
-                  background: value === a.code ? 'rgba(0,180,216,0.15)' : 'transparent',
-                  border: 'none', cursor: 'pointer',
-                  color: value === a.code ? '#00b4d8' : '#94a3b8',
-                  fontSize: 12,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  width: '100%', padding: '9px 12px', textAlign: 'left',
+                  background: value === a.code ? 'rgba(0,180,216,0.1)' : 'transparent',
+                  border: 'none', cursor: 'pointer', transition: 'background 0.1s',
+                  borderBottom: '1px solid rgba(255,255,255,0.03)',
                 }}
+                onMouseEnter={e => { if (value !== a.code) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                onMouseLeave={e => { if (value !== a.code) e.currentTarget.style.background = 'transparent'; }}
               >
-                <span style={{ fontFamily: 'monospace', fontWeight: 700, marginRight: 8 }}>{a.code}</span>
-                {a.city} <span style={{ opacity: 0.5 }}>· {a.country}</span>
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: 13, color: value === a.code ? '#00b4d8' : '#DDE3F5', minWidth: 36 }}>{a.code}</span>
+                <div>
+                  <div style={{ fontSize: 12, color: '#94a3b8' }}>{a.city}</div>
+                  <div style={{ fontSize: 10, color: '#3C4566' }}>{a.country}</div>
+                </div>
               </button>
             ))}
           </motion.div>
@@ -88,6 +98,13 @@ function AddLegForm({ onAdd, onCancel }) {
   const [dur, setDur]       = useState(25);
   const [time, setTime]     = useState('09:00');
 
+  const inputStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 10, boxSizing: 'border-box',
+    background: '#08101E', border: '1px solid #131D30',
+    color: '#DDE3F5', fontSize: 13, outline: 'none',
+    fontFamily: 'JetBrains Mono, monospace', transition: 'border-color 0.15s',
+  };
+
   const submit = () => {
     const origAp = airports.find(a => a.code === origin);
     const destAp = airports.find(a => a.code === dest);
@@ -100,45 +117,67 @@ function AddLegForm({ onAdd, onCancel }) {
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
-      style={{ overflow: 'hidden' }}
+      transition={{ duration: 0.22 }}
+      style={{ overflow: 'hidden', marginBottom: 10 }}
     >
       <div style={{
-        background: 'rgba(0,180,216,0.06)', border: '1px solid rgba(0,180,216,0.2)',
-        borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12,
+        background: '#08101E', border: '1px solid rgba(0,180,216,0.25)',
+        borderLeft: '3px solid rgba(0,180,216,0.6)',
+        borderRadius: '0 12px 12px 0', padding: 16,
+        display: 'flex', flexDirection: 'column', gap: 12,
       }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#00b4d8', letterSpacing: '0.05em' }}>ADD NEW LEG</div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: '0.2em', color: '#00b4d8', textTransform: 'uppercase' }}>
+          NEW LEG
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <AirportSelect value={origin} onChange={setOrigin} label="Departure" />
-          <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 10, color: '#475569' }}>→</div>
+          <div style={{ paddingBottom: 12, color: '#2A3450', flexShrink: 0 }}>→</div>
           <AirportSelect value={dest} onChange={setDest} label="Arrival" />
         </div>
+
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Departure Time</div>
-            <input
-              type="time" value={time} onChange={e => setTime(e.target.value)}
-              style={{ width: '100%', padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#e0e6f0', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: '0.16em', color: '#3C4566', textTransform: 'uppercase', marginBottom: 6 }}>Dep. Time</div>
+            <input type="time" value={time} onChange={e => setTime(e.target.value)}
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = 'rgba(0,180,216,0.4)'}
+              onBlur={e => e.target.style.borderColor = '#131D30'}
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Duration (min)</div>
-            <input
-              type="number" value={dur} min="5" max="180" onChange={e => setDur(Math.max(5, parseInt(e.target.value) || 25))}
-              style={{ width: '100%', padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#e0e6f0', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: '0.16em', color: '#3C4566', textTransform: 'uppercase', marginBottom: 6 }}>Duration (min)</div>
+            <input type="number" value={dur} min="5" max="180"
+              onChange={e => setDur(Math.max(5, parseInt(e.target.value) || 25))}
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = 'rgba(0,180,216,0.4)'}
+              onBlur={e => e.target.style.borderColor = '#131D30'}
             />
           </div>
         </div>
+
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={submit} style={{
-            flex: 1, padding: '9px 0', borderRadius: 10, fontWeight: 600, fontSize: 13,
-            background: 'rgba(0,180,216,0.2)', border: '1px solid rgba(0,180,216,0.4)',
-            color: '#00b4d8', cursor: 'pointer',
-          }}>Add</button>
+            flex: 1, height: 40, borderRadius: 10,
+            fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
+            background: 'rgba(0,180,216,0.15)', border: '1px solid rgba(0,180,216,0.4)',
+            color: '#00b4d8', cursor: 'pointer', transition: 'all 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,180,216,0.25)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,180,216,0.15)'; }}
+          >
+            ADD LEG
+          </button>
           <button onClick={onCancel} style={{
-            padding: '9px 20px', borderRadius: 10, fontSize: 13,
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-            color: '#64748b', cursor: 'pointer',
-          }}>Cancel</button>
+            height: 40, padding: '0 16px', borderRadius: 10, fontSize: 12,
+            background: 'transparent', border: '1px solid #131D30',
+            color: '#3C4566', cursor: 'pointer', transition: 'all 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = '#1E2540'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#3C4566'; e.currentTarget.style.borderColor = '#131D30'; }}
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </motion.div>
@@ -151,15 +190,14 @@ export function FlightPlanScreen() {
   const [showForm, setShowForm] = useState(false);
   const legs = flightPlan?.legs ?? [];
   const today = new Date().toISOString().slice(0, 10);
+  const isDark = state.theme !== 'light';
 
   const addLeg = useCallback(({ originCode, destCode, originAp, destAp, duration, scheduledTime }) => {
     const newLeg = {
       id: Date.now(),
       origin: { code: originCode, city: originAp.city, lat: originAp.lat, lon: originAp.lon },
       dest:   { code: destCode,   city: destAp.city,   lat: destAp.lat,   lon: destAp.lon   },
-      duration,
-      scheduledTime,
-      status: 'pending',
+      duration, scheduledTime, status: 'pending',
     };
     dispatch({ type: 'FLIGHT_PLAN_ADD_LEG', payload: newLeg });
     setShowForm(false);
@@ -176,7 +214,7 @@ export function FlightPlanScreen() {
         mode: 'city',
         origin:      { city: leg.origin.city, code: leg.origin.code, lat: leg.origin.lat, lon: leg.origin.lon },
         destination: { city: leg.dest.city,   code: leg.dest.code,   lat: leg.dest.lat,   lon: leg.dest.lon   },
-        duration:    leg.duration,
+        duration: leg.duration,
         flightPlanLegId: leg.id,
       },
     });
@@ -184,140 +222,215 @@ export function FlightPlanScreen() {
   }, [dispatch]);
 
   const completedCount = legs.filter(l => l.status === 'completed').length;
-  const totalMin       = legs.reduce((s, l) => s + l.duration, 0);
+  const totalMin = legs.reduce((s, l) => s + l.duration, 0);
+  const progress = legs.length > 0 ? completedCount / legs.length : 0;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
+
       {/* Header */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(7,11,26,0.95)',
+        display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px',
+        background: isDark ? 'rgba(4,6,14,0.97)' : 'rgba(248,252,255,0.97)',
+        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: `1px solid ${isDark ? '#111828' : 'rgba(0,0,0,0.08)'}`,
+        position: 'sticky', top: 0, zIndex: 50,
       }}>
-        <button onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'home' })}
-          style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+        <button
+          onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'home' })}
+          style={{
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'transparent', border: `1px solid ${isDark ? '#131D30' : 'rgba(0,0,0,0.08)'}`,
+            cursor: 'pointer', color: isDark ? '#3C4566' : '#64748b', transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = isDark ? '#DDE3F5' : '#0f172a'; e.currentTarget.style.borderColor = isDark ? '#1E2540' : 'rgba(0,0,0,0.15)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = isDark ? '#3C4566' : '#64748b'; e.currentTarget.style.borderColor = isDark ? '#131D30' : 'rgba(0,0,0,0.08)'; }}
+        >
           <ArrowLeft size={16} />
         </button>
 
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#00b4d8', letterSpacing: '0.1em' }}>FPL</span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#e0e6f0' }}>Daily Flight Plan</span>
+            <span style={{
+              fontFamily: 'JetBrains Mono, monospace', fontSize: 9, fontWeight: 700,
+              letterSpacing: '0.18em', color: '#8b5cf6',
+              padding: '2px 7px', borderRadius: 4,
+              background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)',
+            }}>FPL</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#DDE3F5' : '#0f172a' }}>
+              Daily Flight Plan
+            </span>
           </div>
-          <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
-            {today} · {legs.length} legs · {totalMin} min
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: isDark ? '#2A3450' : '#94a3b8', marginTop: 2, letterSpacing: '0.06em' }}>
+            {today} · {legs.length} legs · {totalMin} min total
           </div>
         </div>
 
         {/* Progress */}
         {legs.length > 0 && (
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#22c55e' }}>{completedCount}/{legs.length}</div>
-            <div style={{ fontSize: 10, color: '#475569' }}>completed</div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 16, fontWeight: 700, color: '#E8A030', lineHeight: 1 }}>
+              {completedCount}<span style={{ color: '#2A3450', fontWeight: 400 }}>/{legs.length}</span>
+            </div>
+            <div style={{ fontSize: 9, color: '#3C4566', marginTop: 3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>done</div>
+            <div style={{ width: 48, height: 2, background: '#131D30', borderRadius: 1, marginTop: 5, overflow: 'hidden' }}>
+              <motion.div
+                style={{ height: '100%', background: '#E8A030', borderRadius: 1 }}
+                animate={{ width: `${progress * 100}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
           </div>
         )}
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, padding: '20px', maxWidth: 640, margin: '0 auto', width: '100%', overflowY: 'auto' }}>
+      <div style={{ flex: 1, padding: '20px', maxWidth: 640, margin: '0 auto', width: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
+
         <AnimatePresence>
           {showForm && <AddLegForm onAdd={addLeg} onCancel={() => setShowForm(false)} />}
         </AnimatePresence>
 
-        {legs.length === 0 ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            style={{ textAlign: 'center', padding: '60px 0', color: '#475569' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>Flight plan empty</div>
-            <div style={{ fontSize: 13, marginBottom: 24 }}>Plan your day with routes and durations</div>
+        {/* Empty state */}
+        {legs.length === 0 && !showForm && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ textAlign: 'center', padding: '64px 0' }}
+          >
+            <div style={{ marginBottom: 20 }}>
+              <svg width="52" height="36" viewBox="0 0 52 36" fill="none" style={{ opacity: 0.2 }}>
+                <circle cx="8" cy="18" r="4" stroke="#DDE3F5" strokeWidth="1.5" />
+                <line x1="12" y1="18" x2="20" y2="18" stroke="#DDE3F5" strokeWidth="1" strokeDasharray="3 2" />
+                <text x="22" y="22" fill="#DDE3F5" fontSize="12" fontFamily="monospace">✈</text>
+                <line x1="32" y1="18" x2="44" y2="18" stroke="#DDE3F5" strokeWidth="1" strokeDasharray="3 2" />
+                <circle cx="48" cy="18" r="4" stroke="#DDE3F5" strokeWidth="1.5" />
+                <line x1="4" y1="28" x2="48" y2="28" stroke="#DDE3F5" strokeWidth="0.5" opacity="0.4" />
+                <line x1="4" y1="32" x2="32" y2="32" stroke="#DDE3F5" strokeWidth="0.5" opacity="0.25" />
+              </svg>
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#DDE3F5' : '#0f172a', marginBottom: 6 }}>
+              No flight plan
+            </div>
+            <div style={{ fontSize: 13, color: '#3C4566', marginBottom: 24 }}>
+              Plan your day as a series of flights
+            </div>
             <button onClick={() => setShowForm(true)} style={{
-              padding: '10px 24px', borderRadius: 12, fontSize: 14, fontWeight: 600,
-              background: 'rgba(0,180,216,0.15)', border: '1px solid rgba(0,180,216,0.35)',
-              color: '#00b4d8', cursor: 'pointer',
-            }}>
-              + Add First Leg
+              height: 44, padding: '0 24px', borderRadius: 10,
+              fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
+              background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.35)',
+              color: '#8b5cf6', cursor: 'pointer', transition: 'all 0.15s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.22)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.6)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.12)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.35)'; }}
+            >
+              + ADD FIRST LEG
             </button>
           </motion.div>
-        ) : (
+        )}
+
+        {/* Leg list */}
+        {legs.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {legs.map((leg, idx) => {
               const st = STATUS_STYLE[leg.status];
               const isNext = leg.status === 'pending' && legs.slice(0, idx).every(l => l.status === 'completed' || l.status === 'missed');
+
               return (
                 <motion.div
                   key={leg.id}
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 16 }}
-                  transition={{ delay: idx * 0.04 }}
+                  transition={{ delay: idx * 0.04, type: 'spring', damping: 22, stiffness: 130 }}
                   style={{
-                    background: isNext ? 'rgba(0,180,216,0.07)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${isNext ? 'rgba(0,180,216,0.3)' : 'rgba(255,255,255,0.07)'}`,
-                    borderRadius: 14, padding: '14px 16px',
-                    display: 'flex', alignItems: 'center', gap: 14,
+                    background: isNext ? 'rgba(0,180,216,0.05)' : '#08101E',
+                    border: `1px solid ${isNext ? 'rgba(0,180,216,0.3)' : '#131D30'}`,
+                    borderLeft: `3px solid ${st.color}`,
+                    borderRadius: '0 12px 12px 0',
+                    padding: '12px 14px',
+                    display: 'flex', alignItems: 'center', gap: 10,
                   }}
                 >
-                  {/* Leg number */}
+                  {/* Number */}
                   <div style={{
-                    width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                    background: `${st.bg}`, border: `1px solid ${st.border}`,
+                    width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+                    background: st.bg, border: `1px solid ${st.border}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: st.color,
+                    fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 700, color: st.color,
                   }}>
                     {idx + 1}
                   </div>
 
-                  {/* Scheduled time */}
-                  <div style={{ minWidth: 44, textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>
+                  {/* Time */}
+                  <div style={{ minWidth: 44, textAlign: 'center', flexShrink: 0 }}>
+                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 700, color: isDark ? '#DDE3F5' : '#0f172a', lineHeight: 1 }}>
                       {leg.scheduledTime}
                     </div>
-                    <div style={{ fontSize: 10, color: '#475569', display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
-                      <Clock size={9} />{leg.duration}m
+                    <div style={{ fontSize: 9, color: '#2A3450', marginTop: 3, display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center', letterSpacing: '0.06em' }}>
+                      <Clock size={8} />{leg.duration}m
                     </div>
                   </div>
 
                   {/* Route */}
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 800, color: '#e0e6f0' }}>{leg.origin.code}</div>
-                      <div style={{ fontSize: 10, color: '#475569' }}>{leg.origin.city}</div>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                    <div style={{ textAlign: 'center', minWidth: 36 }}>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 17, fontWeight: 700, color: '#00b4d8', lineHeight: 1 }}>{leg.origin.code}</div>
+                      <div style={{ fontSize: 9, color: '#3C4566', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 44 }}>{leg.origin.city}</div>
                     </div>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4, padding: '0 4px' }}>
-                      <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${st.color}50, transparent)` }} />
-                      <span style={{ fontSize: 12 }}>✈</span>
-                      <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${st.color}50, transparent)` }} />
+
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${st.color}40)` }} />
+                      <span style={{ fontSize: 10, color: st.color, opacity: 0.7 }}>✈</span>
+                      <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${st.color}40, transparent)` }} />
                     </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 800, color: '#e0e6f0' }}>{leg.dest.code}</div>
-                      <div style={{ fontSize: 10, color: '#475569' }}>{leg.dest.city}</div>
+
+                    <div style={{ textAlign: 'center', minWidth: 36 }}>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 17, fontWeight: 700, color: '#E8A030', lineHeight: 1 }}>{leg.dest.code}</div>
+                      <div style={{ fontSize: 9, color: '#3C4566', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 44 }}>{leg.dest.city}</div>
                     </div>
                   </div>
 
-                  {/* Status / Action */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  {/* Status + actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                     <span style={{
-                      fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+                      padding: '3px 8px', borderRadius: 5,
                       background: st.bg, border: `1px solid ${st.border}`, color: st.color,
-                      letterSpacing: '0.05em',
                     }}>{st.label}</span>
 
                     {isNext && (
-                      <button onClick={() => startLeg(leg)} style={{
-                        width: 30, height: 30, borderRadius: 8, cursor: 'pointer',
-                        background: 'rgba(0,180,216,0.2)', border: '1px solid rgba(0,180,216,0.4)',
-                        color: '#00b4d8', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <Play size={13} fill="#00b4d8" />
-                      </button>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => startLeg(leg)}
+                        style={{
+                          width: 32, height: 32, borderRadius: 8, cursor: 'pointer',
+                          background: 'rgba(232,160,48,0.15)', border: '1px solid rgba(232,160,48,0.4)',
+                          color: '#E8A030', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,160,48,0.28)'; e.currentTarget.style.borderColor = 'rgba(232,160,48,0.7)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(232,160,48,0.15)'; e.currentTarget.style.borderColor = 'rgba(232,160,48,0.4)'; }}
+                      >
+                        <Play size={13} fill="#E8A030" />
+                      </motion.button>
                     )}
 
                     {leg.status === 'pending' && (
-                      <button onClick={() => removeLeg(leg.id)} style={{
-                        width: 28, height: 28, borderRadius: 8, cursor: 'pointer',
-                        background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)',
-                        color: '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
+                      <button
+                        onClick={() => removeLeg(leg.id)}
+                        style={{
+                          width: 28, height: 28, borderRadius: 7, cursor: 'pointer',
+                          background: 'transparent', border: '1px solid #131D30',
+                          color: '#2A3450', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.08)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)'; e.currentTarget.style.color = '#f87171'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#131D30'; e.currentTarget.style.color = '#2A3450'; }}
+                      >
                         <Trash2 size={12} />
                       </button>
                     )}
@@ -328,18 +441,23 @@ export function FlightPlanScreen() {
           </div>
         )}
 
-        {/* Add button */}
-        {!showForm && (
+        {/* Add leg button */}
+        {!showForm && legs.length > 0 && (
           <motion.button
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: legs.length * 0.04 + 0.1 }}
             onClick={() => setShowForm(true)}
             style={{
-              width: '100%', marginTop: 12, padding: '11px 0',
-              borderRadius: 12, fontSize: 13, fontWeight: 600,
-              background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.12)',
-              color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', gap: 6, transition: 'all 0.15s',
+              width: '100%', marginTop: 10, height: 44,
+              borderRadius: 10, fontSize: 12, fontWeight: 600,
+              background: 'transparent', border: '1px dashed #1A1D2E',
+              color: '#2A3450', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all 0.15s',
             }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)'; e.currentTarget.style.color = '#8b5cf6'; e.currentTarget.style.background = 'rgba(139,92,246,0.05)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1A1D2E'; e.currentTarget.style.color = '#2A3450'; e.currentTarget.style.background = 'transparent'; }}
           >
             <Plus size={14} /> Add Leg
           </motion.button>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,16 +7,21 @@
 /* ─── Dark theme (default) ─────────────────────── */
 :root,
 [data-theme="dark"] {
-  --bg-primary: #0a0e1a;
-  --bg-secondary: #0d1226;
-  --glass: rgba(255, 255, 255, 0.04);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --bg-primary: #070810;
+  --bg-secondary: #0C0D18;
+  --glass: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.07);
   --blue: #00b4d8;
   --blue-light: #48cae4;
+  --amber: #E8A030;
   --gold: #f4a261;
-  --text: #e0e6f0;
-  --text-muted: #64748b;
-  --shadow-glow: rgba(0, 180, 216, 0.2);
+  --text: #DDE3F5;
+  --text-muted: #3C4566;
+  --shadow-glow: rgba(0, 180, 216, 0.15);
+  --surface: #0C0F1C;
+  --surface-2: #11152A;
+  --border: #161B2E;
+  --border-2: #1E2540;
 }
 
 /* ─── Light theme ───────────────────────────────── */
@@ -46,6 +51,12 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   transition: background 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-display {
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
 }
 
 /* ─── Glass card (elevated glass) ───────────────── */
@@ -68,51 +79,54 @@ body {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(0, 180, 216, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(72, 202, 228, 0.03) 0%, transparent 40%),
-    #0a0e1a;
+    radial-gradient(ellipse at 20% 50%, rgba(0, 180, 216, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(72, 202, 228, 0.04) 0%, transparent 40%),
+    #070810;
   z-index: -1;
 }
 
-/* Aurora effect */
+/* Aurora shimmer */
 .stars-bg::after {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 40% at 10% 80%, rgba(0, 180, 216, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 30% at 90% 20%, rgba(72, 202, 228, 0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 60% at 50% 50%, rgba(0, 100, 180, 0.03) 0%, transparent 70%);
+    radial-gradient(ellipse 80% 40% at 10% 80%, rgba(0, 180, 216, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 30% at 90% 20%, rgba(72, 202, 228, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 50% 50%, rgba(0, 100, 180, 0.04) 0%, transparent 70%);
   animation: aurora 12s ease-in-out infinite alternate;
 }
 
+/* Stars */
 .stars-bg::before {
   content: '';
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.6) 0%, transparent 100%),
-    radial-gradient(1px 1px at 30% 40%, rgba(255,255,255,0.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 85% 25%, rgba(255,255,255,0.6) 0%, transparent 100%),
-    radial-gradient(1px 1px at 20% 75%, rgba(255,255,255,0.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 60% 85%, rgba(255,255,255,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 90% 70%, rgba(255,255,255,0.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 40% 55%, rgba(255,255,255,0.2) 0%, transparent 100%),
-    radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.4) 0%, transparent 100%);
+    radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 40%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 25%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 20% 75%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 85%, rgba(255,255,255,0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 70%, rgba(255,255,255,0.55) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 55%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.45) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 55% 32%, rgba(180,230,255,0.6) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 78% 48%, rgba(180,230,255,0.5) 0%, transparent 100%);
   animation: twinkle 4s ease-in-out infinite alternate;
 }
 
 @keyframes twinkle {
-  0% { opacity: 0.5; }
+  0%   { opacity: 0.5; }
   100% { opacity: 1; }
 }
 
 @keyframes aurora {
-  0% { transform: scale(1) translateX(0); opacity: 0.7; }
-  50% { transform: scale(1.05) translateX(-15px); opacity: 1; }
-  100% { transform: scale(1) translateX(15px); opacity: 0.8; }
+  0%   { transform: scale(1) translateX(0);    opacity: 0.6; }
+  50%  { transform: scale(1.06) translateX(-18px); opacity: 1; }
+  100% { transform: scale(1) translateX(18px); opacity: 0.7; }
 }
 
 /* ─── Light background ──────────────────────────── */
