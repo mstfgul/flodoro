@@ -17,6 +17,7 @@ const initialState = {
   settings: DEFAULT_SETTINGS,
   theme: 'dark',
   flightPlan: { legs: [], date: null },
+  liveCode: null, // join code of the current live session room
 };
 
 function reducer(state, action) {
@@ -71,6 +72,8 @@ function reducer(state, action) {
       );
       return { ...state, flightPlan: { ...state.flightPlan, legs } };
     }
+    case 'SET_LIVE_CODE':
+      return { ...state, liveCode: action.payload };
     case 'RESET':
       return { ...initialState, settings: state.settings, theme: state.theme, flightPlan: state.flightPlan };
     default:

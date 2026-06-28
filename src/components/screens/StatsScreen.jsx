@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Navigation, Flame, TrendingUp, Plane, Map } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
 import { loadSessions } from '../../services/sessions';
 import { formatDuration } from '../../utils/format';
 import { HistoryMap } from '../map/HistoryMap';
@@ -156,22 +158,74 @@ function computeStats(sessions) {
 
 export function StatsScreen() {
   const { dispatch } = useApp();
-  const [sessions, setSessions] = useState([]);
+  const { isAuthenticated, isGuest } = useAuth();
+
+  // Backend stats (for authenticated users)
+  const [backendStats, setBackendStats] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [backendSessions, setBackendSessions] = useState([]);
+
+  // localStorage stats (for guests)
+  const [localSessions, setLocalSessions] = useState([]);
+
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setSessions(loadSessions());
-  }, []);
+    if (isAuthenticated) {
+      Promise.all([
+        api.getStats(),
+        api.getHistory(),
+        api.listSessions(),
+      ])
+        .then(([s, h, sess]) => {
+          setBackendStats(s);
+          setHistory(h || []);
+          setBackendSessions(sess || []);
+        })
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    } else {
+      setLocalSessions(loadSessions());
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
 
-  const stats = useMemo(() => computeStats(sessions), [sessions]);
+  const localStats = useMemo(() => computeStats(localSessions), [localSessions]);
+
+  const stats = isAuthenticated ? {
+    total_minutes:  backendStats?.total_minutes  ?? 0,
+    total_sessions: backendStats?.total_sessions ?? 0,
+    total_km:       backendStats?.total_km       ?? 0,
+    total_miles:    backendStats?.total_miles     ?? 0,
+    current_streak: backendStats?.current_streak ?? 0,
+    longest_streak: backendStats?.longest_streak ?? 0,
+    history: history.map(d => ({ date: d.date, minutes: d.minutes, sessions: d.sessions })),
+  } : localStats;
+
+  const sessions = isAuthenticated ? backendSessions : localSessions;
   const totalHours = Math.floor(stats.total_minutes / 60);
   const totalMins = stats.total_minutes % 60;
+  const isEmpty = stats.total_sessions === 0;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
-      <div className="flex items-center gap-3 px-4 sm:px-5 border-b"
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
+
+      {/* Background breathing orb */}
+      <motion.div
+        animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.4, 0.2] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute pointer-events-none"
         style={{
-          background: 'rgba(4,6,14,0.97)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-          borderColor: '#111828', position: 'sticky', top: 0, zIndex: 50,
+          width: 600, height: 600, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0,180,216,0.07) 0%, transparent 70%)',
+          top: '-20%', left: '50%', transform: 'translateX(-50%)', zIndex: 0,
+        }}
+      />
+
+      <div className="flex items-center gap-3 px-4 sm:px-5 border-b relative z-10"
+        style={{
+          background: 'rgba(7,8,14,0.95)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          borderColor: 'rgba(255,255,255,0.06)', position: 'sticky', top: 0, zIndex: 50,
           paddingTop: 'max(12px, env(safe-area-inset-top, 12px))', paddingBottom: 12,
         }}>
         <button
@@ -179,145 +233,145 @@ export function StatsScreen() {
           style={{
             width: 36, height: 36, borderRadius: 10, flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'transparent', border: '1px solid #131D30',
-            cursor: 'pointer', color: '#3C4566', transition: 'all 0.15s',
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+            cursor: 'pointer', color: '#475569', transition: 'all 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#DDE3F5'; e.currentTarget.style.borderColor = '#1E2540'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#3C4566'; e.currentTarget.style.borderColor = '#131D30'; }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#475569'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
         >
           <ArrowLeft size={16} />
         </button>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#DDE3F5' }}>Statistics</div>
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#2A3450', letterSpacing: '0.08em', marginTop: 2 }}>ALL TIME</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Statistics</div>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#475569', letterSpacing: '0.08em', marginTop: 2 }}>
+            {isAuthenticated ? (backendStats?.display_name || '').toUpperCase() || 'YOUR STATS' : 'GUEST · LOCAL ONLY'}
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 max-w-2xl mx-auto w-full px-5 py-6 space-y-6">
-        {sessions.length === 0 ? (
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-20 text-center"
-          >
-            <div className="text-4xl mb-4">✈️</div>
-            <h2 className="text-lg font-semibold text-white mb-2">No flights yet</h2>
-            <p className="text-sm text-[#64748b] max-w-xs">
-              Complete your first flight — your stats will appear here.
-            </p>
-          </motion.div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3">
-              <StatCard
-                icon={Clock}
-                label="Total Focus"
-                value={`${totalHours}h ${totalMins}m`}
-                sub={`${stats.total_sessions} flights`}
-                color="#00b4d8"
-                delay={0}
-              />
-              <StatCard
-                icon={Navigation}
-                label="Distance Flown"
-                value={`${Math.round(stats.total_km).toLocaleString()} km`}
-                sub={`${Math.round(stats.total_miles).toLocaleString()} mi`}
-                color="#48cae4"
-                delay={0.05}
-              />
-              <StatCard
-                icon={Flame}
-                label="Current Streak"
-                value={`${stats.current_streak} days`}
-                sub={stats.current_streak > 0 ? '🔥 Ongoing' : 'Start today!'}
-                color="#f4a261"
-                delay={0.1}
-              />
-              <StatCard
-                icon={TrendingUp}
-                label="Longest Streak"
-                value={`${stats.longest_streak} days`}
-                sub="All-time record"
-                color="#48cae4"
-                delay={0.15}
-              />
-            </div>
-
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 1.4, repeat: Infinity }}
+            style={{ color: '#00b4d8', fontSize: 24 }}
+          >✈</motion.div>
+        </div>
+      ) : (
+        <div className="flex-1 max-w-2xl mx-auto w-full px-5 py-6 space-y-6 relative z-10">
+          {isEmpty ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="glass border border-white/8 rounded-xl p-5"
+              className="flex flex-col items-center justify-center py-20 text-center"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-white">Last 30 Days</h3>
-                  <p className="text-xs text-[#64748b]">Daily focus minutes</p>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-[#64748b]">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#00b4d8] inline-block" />Day</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#f4a261] inline-block" />Today</span>
-                </div>
-              </div>
-              {stats.history.some(d => d.minutes > 0) ? (
-                <BarChart data={stats.history} />
-              ) : (
-                <div className="h-28 flex items-center justify-center text-[#374151] text-sm">
-                  No data yet — make your first flight!
-                </div>
-              )}
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.28 }}
-              className="glass border border-white/8 rounded-xl p-5"
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <Map size={14} className="text-[#00b4d8]" />
-                <div>
-                  <h3 className="text-sm font-semibold text-white">Flight Map</h3>
-                  <p className="text-xs text-[#64748b]">All routes</p>
-                </div>
-                <div className="ml-auto flex items-center gap-3 text-xs text-[#64748b]">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#00b4d8] inline-block" />Live</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#f4a261] inline-block" />City</span>
-                </div>
-              </div>
-              <HistoryMap sessions={sessions} />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.33 }}
-              className="glass border border-white/8 rounded-xl p-5"
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-sm">💺</span>
-                <div>
-                  <h3 className="text-sm font-semibold text-white">Weekly Seat Map</h3>
-                  <p className="text-xs text-[#64748b]">Each seat = one focus session</p>
-                </div>
-              </div>
-              <SeatMap sessions={sessions} />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.35 }}
-              className="flex items-center gap-3 p-4 glass border border-white/8 rounded-xl"
-            >
-              <Plane size={16} className="text-[#00b4d8] flex-shrink-0" />
-              <p className="text-xs text-[#64748b]">
-                Every completed flight is automatically saved on this device.
+              <div className="text-4xl mb-4">✈️</div>
+              <h2 className="text-lg font-semibold text-white mb-2">No flights yet</h2>
+              <p className="text-sm text-[#64748b] max-w-xs">
+                Complete your first flight — your stats will appear here.
               </p>
             </motion.div>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <StatCard
+                  icon={Clock}
+                  label="Total Focus"
+                  value={`${totalHours}h ${totalMins}m`}
+                  sub={`${stats.total_sessions} flights`}
+                  color="#00b4d8"
+                  delay={0}
+                />
+                <StatCard
+                  icon={Navigation}
+                  label="Distance Flown"
+                  value={`${Math.round(stats.total_km).toLocaleString()} km`}
+                  sub={`${Math.round(stats.total_miles).toLocaleString()} mi`}
+                  color="#48cae4"
+                  delay={0.05}
+                />
+                <StatCard
+                  icon={Flame}
+                  label="Current Streak"
+                  value={`${stats.current_streak} days`}
+                  sub={stats.current_streak > 0 ? '🔥 Ongoing' : 'Start today!'}
+                  color="#f4a261"
+                  delay={0.1}
+                />
+                <StatCard
+                  icon={TrendingUp}
+                  label="Longest Streak"
+                  value={`${stats.longest_streak} days`}
+                  sub="All-time record"
+                  color="#48cae4"
+                  delay={0.15}
+                />
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="glass border border-white/8 rounded-xl p-5"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">Last 30 Days</h3>
+                    <p className="text-xs text-[#64748b]">Daily focus minutes</p>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-[#64748b]">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#00b4d8] inline-block" />Day</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#f4a261] inline-block" />Today</span>
+                  </div>
+                </div>
+                {stats.history.some(d => d.minutes > 0) ? (
+                  <BarChart data={stats.history} />
+                ) : (
+                  <div className="h-28 flex items-center justify-center text-[#374151] text-sm">
+                    No data yet — make your first flight!
+                  </div>
+                )}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.28 }}
+                className="glass border border-white/8 rounded-xl p-5"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Map size={14} className="text-[#00b4d8]" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">Flight Map</h3>
+                    <p className="text-xs text-[#64748b]">All routes</p>
+                  </div>
+                  <div className="ml-auto flex items-center gap-3 text-xs text-[#64748b]">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#00b4d8] inline-block" />Live</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#f4a261] inline-block" />City</span>
+                  </div>
+                </div>
+                <HistoryMap sessions={sessions} />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.33 }}
+                className="glass border border-white/8 rounded-xl p-5"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-sm">💺</span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">Weekly Seat Map</h3>
+                    <p className="text-xs text-[#64748b]">Each seat = one focus session</p>
+                  </div>
+                </div>
+                <SeatMap sessions={sessions} />
+              </motion.div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

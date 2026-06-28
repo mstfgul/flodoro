@@ -1,12 +1,141 @@
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Radio, Navigation, BarChart2, Zap, CalendarDays, ChevronRight } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Radio, Navigation, BarChart2, Zap, CalendarDays, ChevronRight, Package, LogOut, Users, User, ChevronDown } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { startAirportAmbience, stopAirportAmbience } from '../../services/sounds';
 
+function UserMenu({ user, isGuest, onNavigate, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const initials = user?.display_name
+    ? user.display_name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
+
+  if (isGuest) {
+    return (
+      <button
+        onClick={onLogout}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-white/10 text-[#64748b] hover:text-white hover:border-white/20 transition-all glass"
+      >
+        <User size={12} />
+        Sign In
+      </button>
+    );
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '5px 10px 5px 5px',
+          background: open ? 'rgba(0,180,216,0.1)' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${open ? 'rgba(0,180,216,0.3)' : 'rgba(255,255,255,0.1)'}`,
+          borderRadius: 14, cursor: 'pointer', transition: 'all 0.15s',
+        }}
+      >
+        {/* Avatar */}
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #00b4d8, #0096c7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 800, color: '#fff', flexShrink: 0,
+        }}>
+          {initials}
+        </div>
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#c0d0e0', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {user?.display_name || 'Account'}
+        </span>
+        <ChevronDown size={12} style={{ color: '#4a5568', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+              minWidth: 200,
+              background: 'rgba(8,16,30,0.98)',
+              border: '1px solid #1a2740',
+              borderRadius: 16,
+              boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+              overflow: 'hidden', zIndex: 100,
+            }}
+          >
+            {/* User info header */}
+            <div style={{ padding: '12px 14px', borderBottom: '1px solid #1a2740' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
+                {user?.display_name}
+              </div>
+              <div style={{ fontSize: 11, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user?.email}
+              </div>
+            </div>
+
+            {/* Nav items */}
+            {[
+              { icon: <Package size={13} />, label: 'My Hangar', color: '#E8A030', screen: 'hangar' },
+              { icon: <BarChart2 size={13} />, label: 'Statistics', color: '#00b4d8', screen: 'stats' },
+              { icon: <Users size={13} />, label: 'Live Sessions', color: '#8b5cf6', screen: 'live-sessions' },
+            ].map(item => (
+              <button
+                key={item.screen}
+                onClick={() => { onNavigate(item.screen); setOpen(false); }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 14px', background: 'none', border: 'none',
+                  cursor: 'pointer', color: '#8899aa', fontSize: 13, fontWeight: 500,
+                  transition: 'all 0.12s', textAlign: 'left',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#fff'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#8899aa'; }}
+              >
+                <span style={{ color: item.color }}>{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+
+            {/* Divider + logout */}
+            <div style={{ borderTop: '1px solid #1a2740' }}>
+              <button
+                onClick={() => { onLogout(); setOpen(false); }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 14px', background: 'none', border: 'none',
+                  cursor: 'pointer', color: '#ef4444', fontSize: 13, fontWeight: 500,
+                  transition: 'background 0.12s', textAlign: 'left',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.07)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >
+                <LogOut size={13} />
+                Sign Out
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function HomeScreen() {
   const { dispatch, state } = useApp();
+  const { user, isGuest, logout } = useAuth();
   const soundEnabled = state.settings?.soundEnabled !== false;
 
   useEffect(() => {
@@ -18,13 +147,10 @@ export function HomeScreen() {
       startAirportAmbience(0.18).catch(() => {});
       document.removeEventListener('pointerdown', start);
     };
-    const t = setTimeout(() => {
-      startAirportAmbience(0.18).catch(() => {
-        if (!started) document.addEventListener('pointerdown', start, { once: true });
-      });
-    }, 600);
+    startAirportAmbience(0.18).catch(() => {
+      document.addEventListener('pointerdown', start, { once: true });
+    });
     return () => {
-      clearTimeout(t);
       document.removeEventListener('pointerdown', start);
       stopAirportAmbience();
     };
@@ -56,15 +182,14 @@ export function HomeScreen() {
       />
 
       {/* Top right controls */}
-      <div className="fixed top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-2 z-20">
+      <div className="fixed top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-2 z-50">
         <ThemeToggle />
-        <button
-          onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'stats' })}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 rounded-xl text-xs font-medium glass border border-white/10 text-[#94a3b8] hover:text-white transition-all"
-        >
-          <BarChart2 size={13} />
-          <span className="hidden sm:inline">Statistics</span>
-        </button>
+        <UserMenu
+          user={user}
+          isGuest={isGuest}
+          onNavigate={(screen) => dispatch({ type: 'SET_SCREEN', payload: screen })}
+          onLogout={logout}
+        />
       </div>
 
       {/* ── Logo block ── */}

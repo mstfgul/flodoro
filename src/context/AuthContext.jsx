@@ -76,9 +76,12 @@ export function AuthProvider({ children }) {
   }, []);
 
   const isAuthenticated = !!state.user;
+  // Guests can use focus timer but not: hangar, aircraft purchase, live sessions, stats
+  const canUseHangar = isAuthenticated;
+  const canUseLive = isAuthenticated;
 
   return (
-    <AuthContext.Provider value={{ ...state, isAuthenticated, login, register, continueAsGuest, logout }}>
+    <AuthContext.Provider value={{ ...state, isAuthenticated, canUseHangar, canUseLive, login, register, continueAsGuest, logout }}>
       {children}
     </AuthContext.Provider>
   );

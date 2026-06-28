@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { greatCirclePoints, interpolatePosition, bearing, getBounds } from '../../utils/geo';
+import { greatCirclePoints, interpolatePosition, bearing, getBounds, projectAhead } from '../../utils/geo';
 import { DayNightLayer } from './DayNightLayer';
 
 const TILES = {
@@ -92,17 +92,20 @@ function MapFollower({ planePos }) {
   return null;
 }
 
-function createGhostIcon(heading) {
+function createGhostIcon(heading, theme = 'dark') {
+  const color   = theme === 'light' ? '#0369a1' : '#48cae4';
+  const glow    = theme === 'light' ? 'rgba(3,105,161,0.5)' : 'rgba(72,202,228,0.5)';
+  const opacity = theme === 'light' ? 0.55 : 0.52;
   return L.divIcon({
-    html: `<div style="transform:rotate(${heading || 0}deg);width:20px;height:20px;display:flex;align-items:center;justify-content:center;opacity:0.55;">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="#f59e0b"
-        style="filter:drop-shadow(0 0 4px rgba(245,158,11,0.6))">
+    html: `<div style="transform:rotate(${heading || 0}deg);width:26px;height:26px;display:flex;align-items:center;justify-content:center;opacity:${opacity};">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="${color}"
+        style="filter:drop-shadow(0 0 4px ${glow}) drop-shadow(0 0 2px ${glow})">
         <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
       </svg>
     </div>`,
     className: 'ghost-marker',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
   });
 }
 
@@ -170,9 +173,22 @@ export function WorkMap({ session, progress, livePos, mapView, theme = 'dark', a
   const originIcon = useMemo(() => createOriginIcon(theme), [theme]);
   const destIcon = useMemo(() => createDestIcon(), []);
   const ghostIcons = useMemo(
-    () => ghostFlights.map(f => ({ ...f, icon: createGhostIcon(f.heading) })),
-    [ghostFlights]
+    () => ghostFlights.map(f => ({ ...f, icon: createGhostIcon(f.heading, theme) })),
+    [ghostFlights, theme]
   );
+
+  // Trail (behind) + projected path (ahead) for each ghost — use velocity or 240 m/s default
+  const ghostRoutes = useMemo(() => ghostFlights.map(f => {
+    const spd = f.velocity || 240;
+    const hdg = f.heading || 0;
+    const trail = projectAhead(f.lat, f.lon, (hdg + 180) % 360, spd, 1.0);
+    const ahead = projectAhead(f.lat, f.lon, hdg, spd, 1.5);
+    return {
+      key:   f.icao24,
+      trail: [[trail.lat, trail.lon], [f.lat, f.lon]],
+      ahead: [[f.lat, f.lon], [ahead.lat, ahead.lon]],
+    };
+  }), [ghostFlights]);
 
   return (
     <MapContainer
@@ -219,7 +235,21 @@ export function WorkMap({ session, progress, livePos, mapView, theme = 'dark', a
         </>
       )}
 
-      {/* Ghost flights — icons memoized, not recreated per render */}
+      {/* Ghost flight routes — trail behind + projected path ahead */}
+      {ghostRoutes.map(r => (
+        <React.Fragment key={r.key}>
+          <Polyline
+            positions={r.trail}
+            pathOptions={{ color: '#48cae4', weight: 1.2, opacity: theme === 'light' ? 0.22 : 0.28 }}
+          />
+          <Polyline
+            positions={r.ahead}
+            pathOptions={{ color: '#48cae4', weight: 0.8, opacity: theme === 'light' ? 0.12 : 0.16, dashArray: '4 6' }}
+          />
+        </React.Fragment>
+      ))}
+
+      {/* Ghost flight icons */}
       {ghostIcons.map(f => (
         <Marker
           key={f.icao24}

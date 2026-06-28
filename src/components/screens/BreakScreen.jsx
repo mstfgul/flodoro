@@ -149,6 +149,19 @@ export function BreakScreen() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 relative overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
+
+      {/* Background breathing orb */}
+      <motion.div
+        animate={{ scale: [1, 1.18, 1], opacity: [0.25, 0.45, 0.25] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute pointer-events-none"
+        style={{
+          width: 600, height: 600, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0,180,216,0.08) 0%, transparent 70%)',
+          top: '-15%', left: '50%', transform: 'translateX(-50%)',
+        }}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -183,12 +196,10 @@ export function BreakScreen() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="rounded-2xl p-6 w-full"
-          style={isDark
-            ? { background: '#08101E', border: '1px solid #131D30' }
-            : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.08)' }
-          }
+          className="rounded-2xl p-0.5 w-full"
+          style={{ background: 'linear-gradient(135deg, rgba(0,180,216,0.2) 0%, rgba(0,180,216,0.05) 100%)' }}
         >
+        <div className="rounded-[14px] glass p-6 w-full">
           {status === 'completed' ? (
             <div className="text-center">
               <div style={{ fontSize: 40, marginBottom: 10 }}>🔔</div>
@@ -230,6 +241,7 @@ export function BreakScreen() {
               </div>
             </div>
           )}
+        </div>
         </motion.div>
 
         {/* Next flight CTA */}

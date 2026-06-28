@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, ArrowRight, Plane, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Plane, AlertCircle, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 
@@ -142,25 +142,24 @@ export function AuthScreen() {
           </Button>
         </form>
 
-        <div className="relative my-5">
+        <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-white/8" />
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-transparent px-3 text-xs text-[#475569]">veya</span>
+            <span className="bg-transparent px-3 text-xs text-[#374151]">ya da</span>
           </div>
         </div>
 
         <button
           onClick={continueAsGuest}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm text-[#64748b] hover:text-white border border-white/8 hover:border-white/20 transition-all glass"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm text-[#64748b] hover:text-white border border-white/8 hover:border-white/15 transition-all"
         >
-          <Plane size={14} />
+          <EyeOff size={14} />
           Misafir Olarak Devam Et
         </button>
-
-        <p className="text-center text-xs text-[#374151] mt-4">
-          Misafir modunda istatistikler kaydedilmez
+        <p className="text-center text-xs text-[#374151] mt-2">
+          Misafir modunda hangar, satın alma ve canlı oturumlar kısıtlıdır
         </p>
       </motion.div>
     </div>

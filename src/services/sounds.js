@@ -7,11 +7,18 @@ let chimedOnce = false;
 function getOrCreate(key, src, { loop = false, volume = 1 } = {}) {
   if (!tracks[key]) {
     const a = new Audio(BASE + src);
+    a.preload = 'auto';
     a.loop = loop;
     a.volume = volume;
     tracks[key] = a;
   }
   return tracks[key];
+}
+
+export function preloadSounds() {
+  getOrCreate('airport', 'airport-ambience.mp3', { loop: true, volume: 0 });
+  getOrCreate('cabin', 'cabin-ambience.mp3', { loop: true, volume: 0 });
+  getOrCreate('chime', 'chime.mp3', { volume: 0.7 });
 }
 
 // ── Boarding chime (short, play once) ───────────────────────────────

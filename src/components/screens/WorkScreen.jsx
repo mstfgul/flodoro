@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, Map, Satellite, BarChart2, Wind, Radio, ChevronDown, ChevronUp, Volume2, VolumeX, Focus, Maximize2, Sun, Moon } from 'lucide-react';
+import { Settings, Map, Satellite, BarChart2, Wind, Radio, ChevronDown, ChevronUp, Volume2, VolumeX, Focus, Maximize2, Sun, Moon, MessageCircle, Send, X, Users } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import { api, openSessionSocket } from '../../services/api';
 import { useTimer } from '../../hooks/useTimer';
 import { WorkMap } from '../map/WorkMap';
 import { FlightTimer } from '../timer/FlightTimer';
@@ -9,7 +11,7 @@ import { SettingsModal } from '../ui/SettingsModal';
 import { LandingModal } from '../ui/LandingModal';
 import { Button } from '../ui/Button';
 import { formatAltitude, formatSpeed, formatDuration, formatTime } from '../../utils/format';
-import { fetchFlightByIcao } from '../../services/opensky';
+import { fetchFlightByIcao, parseState, getDemoFlights } from '../../services/opensky';
 import { saveSession as saveLocalSession } from '../../services/sessions';
 import { haversineDistance } from '../../utils/geo';
 import { startEngine, stopEngine, setEngineVolume } from '../../services/ambient';
@@ -25,6 +27,356 @@ import { fetchWeather } from '../../services/weather';
 import { getAirlineFromCallsign } from '../../data/airlineThemes';
 import { startAtcChatter, stopAtcChatter } from '../../services/atc';
 import { approxLocalTime } from '../../utils/solar';
+
+// ─── Radar Widget ────────────────────────────────────────────────────────────
+// Pre-seeded phantom traffic blips (angle°, radius fraction, blip size)
+const PHANTOM_BLIPS = [
+  { a: 32,  r: 0.52, s: 1.6 },
+  { a: 78,  r: 0.73, s: 2.2 },
+  { a: 118, r: 0.38, s: 1.4 },
+  { a: 165, r: 0.61, s: 1.8 },
+  { a: 214, r: 0.44, s: 1.5 },
+  { a: 255, r: 0.80, s: 2.0 },
+  { a: 298, r: 0.56, s: 1.7 },
+  { a: 342, r: 0.29, s: 1.3 },
+];
+
+// Degree tick labels around the edge
+const TICK_LABELS = [
+  { a: 0,   label: '0' },
+  { a: 90,  label: '90' },
+  { a: 180, label: '180' },
+  { a: 270, label: '270' },
+];
+
+function RadarWidget({ session, progress = 0 }) {
+  const canvasRef = useRef(null);
+  const sweepRef  = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const cx = W / 2, cy = H / 2, R = W / 2 - 3;
+    let raf;
+
+    // ── Project lat/lon → canvas xy ──────────────────────────────
+    const orig = session?.origin;
+    const dest = session?.destination;
+
+    let routePoints = null;
+    let originPx = null, destPx = null, posPx = null;
+
+    if (orig?.lat != null && dest?.lat != null) {
+      const midLat = (orig.lat + dest.lat) / 2;
+      const midLon = (orig.lon + dest.lon) / 2;
+
+      // Scale: longest axis fills ~68% of radius
+      const dLat = Math.abs(dest.lat - orig.lat);
+      const dLon = Math.abs(dest.lon - orig.lon) * Math.cos(midLat * Math.PI / 180);
+      const maxDelta = Math.max(dLat, dLon, 1);
+      const scale = (R * 0.68) / (maxDelta * 0.5);
+
+      const project = (lat, lon) => ({
+        x: cx + (lon - midLon) * Math.cos(midLat * Math.PI / 180) * scale,
+        y: cy - (lat - midLat) * scale,
+      });
+
+      originPx = project(orig.lat, orig.lon);
+      destPx   = project(dest.lat, dest.lon);
+
+      // Interpolate current position (great-circle approximation with arc)
+      const steps = 40;
+      routePoints = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        // Simple spherical interpolation (SLERP-ish for short distances)
+        const lat = orig.lat + (dest.lat - orig.lat) * t;
+        const lon = orig.lon + (dest.lon - orig.lon) * t;
+        routePoints.push(project(lat, lon));
+      }
+
+      // Current aircraft position along route
+      const posLat = orig.lat + (dest.lat - orig.lat) * progress;
+      const posLon = orig.lon + (dest.lon - orig.lon) * progress;
+      posPx = project(posLat, posLon);
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
+
+      // ── Clip to circle ─────────────────────────────────────────
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.clip();
+
+      // ── Background ─────────────────────────────────────────────
+      const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+      bgGrad.addColorStop(0, '#011409');
+      bgGrad.addColorStop(1, '#000d04');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // ── CRT scanlines (subtle horizontal stripes) ───────────────
+      for (let y = 0; y < H; y += 3) {
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.fillRect(0, y, W, 1);
+      }
+
+      // ── Range rings ───────────────────────────────────────────
+      [0.33, 0.55, 0.77, 1.0].forEach((f, i) => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, R * f, 0, Math.PI * 2);
+        ctx.strokeStyle = i === 3 ? 'rgba(0,220,60,0.25)' : 'rgba(0,200,50,0.14)';
+        ctx.lineWidth = i === 3 ? 0.8 : 0.5;
+        ctx.stroke();
+      });
+
+      // ── Cross lines ───────────────────────────────────────────
+      ctx.strokeStyle = 'rgba(0,200,50,0.13)';
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.stroke();
+
+      // ── Degree tick marks around edge ─────────────────────────
+      for (let deg = 0; deg < 360; deg += 10) {
+        const rad = (deg - 90) * Math.PI / 180;
+        const isMajor = deg % 30 === 0;
+        const inner = R * (isMajor ? 0.88 : 0.92);
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(rad) * inner, cy + Math.sin(rad) * inner);
+        ctx.lineTo(cx + Math.cos(rad) * R,     cy + Math.sin(rad) * R);
+        ctx.strokeStyle = isMajor ? 'rgba(0,230,60,0.5)' : 'rgba(0,200,50,0.2)';
+        ctx.lineWidth = isMajor ? 0.8 : 0.4;
+        ctx.stroke();
+      }
+
+      // ── Degree number labels ──────────────────────────────────
+      ctx.font = `bold 6px "JetBrains Mono", monospace`;
+      ctx.fillStyle = 'rgba(0,230,60,0.55)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      TICK_LABELS.forEach(({ a, label }) => {
+        const rad = (a - 90) * Math.PI / 180;
+        const lr = R * 0.78;
+        ctx.fillText(label, cx + Math.cos(rad) * lr, cy + Math.sin(rad) * lr);
+      });
+
+      // ── Route line ────────────────────────────────────────────
+      if (routePoints && routePoints.length > 1) {
+        // Completed route segment (brighter)
+        ctx.beginPath();
+        const splitIdx = Math.round(progress * routePoints.length);
+        routePoints.slice(0, splitIdx + 1).forEach((p, i) => {
+          if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+        });
+        ctx.strokeStyle = 'rgba(0,255,65,0.5)';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([]);
+        ctx.stroke();
+
+        // Remaining route (dashed, dimmer)
+        ctx.beginPath();
+        routePoints.slice(splitIdx).forEach((p, i) => {
+          if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+        });
+        ctx.strokeStyle = 'rgba(0,180,40,0.25)';
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash([3, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // ── Origin marker ─────────────────────────────────────────
+      if (originPx) {
+        ctx.beginPath();
+        ctx.arc(originPx.x, originPx.y, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,200,50,0.7)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,255,65,0.6)';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+
+      // ── Destination marker (diamond) ──────────────────────────
+      if (destPx) {
+        const ds = 4;
+        ctx.beginPath();
+        ctx.moveTo(destPx.x,      destPx.y - ds);
+        ctx.lineTo(destPx.x + ds, destPx.y);
+        ctx.lineTo(destPx.x,      destPx.y + ds);
+        ctx.lineTo(destPx.x - ds, destPx.y);
+        ctx.closePath();
+        ctx.strokeStyle = 'rgba(0,255,65,0.7)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // ── ICAO code labels ──────────────────────────────────────
+      if (originPx && session?.origin?.code) {
+        ctx.font = 'bold 5.5px "JetBrains Mono", monospace';
+        ctx.fillStyle = 'rgba(0,255,65,0.55)';
+        ctx.textAlign = 'left';
+        ctx.fillText(session.origin.code, originPx.x + 5, originPx.y);
+      }
+      if (destPx && session?.destination?.code) {
+        ctx.font = 'bold 5.5px "JetBrains Mono", monospace';
+        ctx.fillStyle = 'rgba(0,255,65,0.55)';
+        ctx.textAlign = 'right';
+        ctx.fillText(session.destination.code, destPx.x - 5, destPx.y);
+      }
+
+      // ── Phantom traffic blips ─────────────────────────────────
+      PHANTOM_BLIPS.forEach(b => {
+        const bAngle = b.a * (Math.PI / 180);
+        const bx = cx + Math.cos(bAngle) * R * b.r;
+        const by = cy + Math.sin(bAngle) * R * b.r;
+
+        let diff = sweepRef.current - b.a;
+        if (diff < 0) diff += 360;
+        const bright = diff < 100 ? (1 - diff / 100) : 0;
+
+        if (bright > 0.02) {
+          const grd = ctx.createRadialGradient(bx, by, 0, bx, by, b.s * 3.5);
+          grd.addColorStop(0, `rgba(150,255,150,${bright * 0.85})`);
+          grd.addColorStop(0.5, `rgba(0,255,65,${bright * 0.28})`);
+          grd.addColorStop(1, 'rgba(0,255,65,0)');
+          ctx.beginPath(); ctx.arc(bx, by, b.s * 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = grd; ctx.fill();
+          ctx.beginPath(); ctx.arc(bx, by, b.s * 0.9, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(220,255,220,${Math.min(bright, 1)})`;
+          ctx.fill();
+        }
+      });
+
+      // ── Current aircraft position blip ────────────────────────
+      if (posPx) {
+        const t = performance.now() / 1000;
+        const pulse = 0.55 + 0.45 * Math.sin(t * 3);
+
+        // Outer glow
+        const grd = ctx.createRadialGradient(posPx.x, posPx.y, 0, posPx.x, posPx.y, 10);
+        grd.addColorStop(0, `rgba(180,255,180,${pulse * 0.8})`);
+        grd.addColorStop(0.5, `rgba(0,255,65,${pulse * 0.25})`);
+        grd.addColorStop(1, 'rgba(0,255,65,0)');
+        ctx.beginPath(); ctx.arc(posPx.x, posPx.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = grd; ctx.fill();
+
+        // Core
+        ctx.beginPath(); ctx.arc(posPx.x, posPx.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${pulse})`;
+        ctx.fill();
+
+        // ✈ symbol at position
+        ctx.font = '8px sans-serif';
+        ctx.fillStyle = `rgba(200,255,200,${pulse * 0.9})`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('✈', posPx.x + 1, posPx.y - 1);
+      }
+
+      // ── Trailing sweep glow ───────────────────────────────────
+      const sweepA = sweepRef.current * (Math.PI / 180);
+      const TRAIL = Math.PI * 0.52;
+      for (let i = 0; i < 52; i++) {
+        const frac = i / 52;
+        const a = sweepA - TRAIL * (1 - frac);
+        const opacity = frac * 0.32;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, R, a - 0.055, a + 0.005);
+        ctx.fillStyle = `rgba(0,255,65,${opacity})`;
+        ctx.fill();
+      }
+
+      // ── Sweep line ────────────────────────────────────────────
+      const sweepGrad = ctx.createLinearGradient(
+        cx, cy,
+        cx + Math.cos(sweepA) * R, cy + Math.sin(sweepA) * R
+      );
+      sweepGrad.addColorStop(0,   'rgba(0,255,65,0)');
+      sweepGrad.addColorStop(0.5, 'rgba(0,255,65,0.55)');
+      sweepGrad.addColorStop(1,   'rgba(0,255,65,0.98)');
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(sweepA) * R, cy + Math.sin(sweepA) * R);
+      ctx.strokeStyle = sweepGrad;
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      ctx.restore();
+
+      // ── Outer border ring ─────────────────────────────────────
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0,255,65,0.6)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // ── Center cross ─────────────────────────────────────────
+      ctx.strokeStyle = 'rgba(0,255,65,0.5)';
+      ctx.lineWidth = 0.6;
+      ctx.beginPath(); ctx.moveTo(cx - 4, cy); ctx.lineTo(cx + 4, cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, cy - 4); ctx.lineTo(cx, cy + 4); ctx.stroke();
+
+      sweepRef.current = (sweepRef.current + 1.2) % 360;
+      raf = requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, [session, progress]);
+
+  return (
+    <div
+      className="hidden sm:block absolute pointer-events-none select-none"
+      style={{
+        bottom: 162, left: 14, zIndex: 830,
+        filter: 'drop-shadow(0 0 14px rgba(0,255,65,0.32)) drop-shadow(0 0 4px rgba(0,255,65,0.18))',
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        width={116}
+        height={116}
+        style={{ borderRadius: '50%' }}
+      />
+      <div style={{
+        textAlign: 'center', marginTop: 3,
+        fontFamily: 'JetBrains Mono, monospace', fontSize: 7,
+        letterSpacing: '0.22em', color: 'rgba(0,255,65,0.4)',
+      }}>
+        ATC · RADAR
+      </div>
+    </div>
+  );
+}
+
+// Generate ghost traffic scattered around a route — always in the current viewport
+const GHOST_CARRIERS = ['TK','LH','BA','AF','EK','QR','IB','KL','AZ','U2','FR','W6','SU','PC','VY'];
+function generateLocalTraffic(origin, destination, count = 20) {
+  const midLat = (origin.lat + destination.lat) / 2;
+  const midLon = (origin.lon + destination.lon) / 2;
+  const spread = Math.max(Math.abs(destination.lat - origin.lat), Math.abs(destination.lon - origin.lon), 5);
+  return Array.from({ length: count }, (_, i) => {
+    const phi = (i * 137.508) % 360; // golden-angle spread avoids clustering
+    const r   = (0.12 + (i % 6) * 0.13) * spread;
+    const lat = midLat + Math.sin(phi * Math.PI / 180) * r;
+    const lon = midLon + Math.cos(phi * Math.PI / 180) * r;
+    return {
+      icao24:   `ghost${i.toString(16).padStart(4, '0')}`,
+      callsign: `${GHOST_CARRIERS[i % GHOST_CARRIERS.length]}${100 + i * 47}`,
+      lat, lon,
+      heading:  Math.round(phi / 22.5) * 22.5,
+      baroAlt:  9000 + (i % 5) * 600,
+      velocity: 220 + (i % 6) * 12,
+      onGround: false,
+    };
+  });
+}
 
 function deadReckon(pos, velocityMs, headingDeg, dtSeconds) {
   if (!pos || !velocityMs || !headingDeg) return pos;
@@ -42,6 +394,7 @@ function deadReckon(pos, velocityMs, headingDeg, dtSeconds) {
 
 export function WorkScreen() {
   const { state, dispatch } = useApp();
+  const { isAuthenticated } = useAuth();
   const { session, settings, selectedFlight } = state;
   const [showSettings, setShowSettings] = useState(false);
   const [mapView, setMapView] = useState(session?.mode === 'live' ? 'realtime' : settings.mapView);
@@ -57,6 +410,10 @@ export function WorkScreen() {
   const soundEnabled = settings?.soundEnabled !== false; // default on
 
   const [displayPos, setDisplayPos] = useState(null);
+  const [ghostFlights, setGhostFlights] = useState(() =>
+    session?.origin?.lat ? generateLocalTraffic(session.origin, session.destination) : []
+  );
+
   const lastApiPos = useRef(null);
   const lastApiTime = useRef(null);
   const drRef = useRef(null);
@@ -85,23 +442,48 @@ export function WorkScreen() {
   const { elapsed, remaining, progress, status, pause, resume, totalSeconds, isRealistic } =
     useTimer(handleComplete);
 
-  // ── saveSession — persists to localStorage ──────────────────────────
-  const saveSession = useCallback((st, useElapsed = false) => {
+  // ── saveSession — persists to backend (authenticated) or localStorage (guest) ──
+  const saveSession = useCallback(async (st, useElapsed = false) => {
     const finalMin = (isRealistic || useElapsed) ? Math.round(elapsed / 60) : Math.round(totalSeconds / 60);
     const dist = session?.origin && session?.destination
       ? haversineDistance(session.origin.lat, session.origin.lon, session.destination.lat, session.destination.lon)
       : 0;
-    saveLocalSession({
-      status: st,
-      duration_min: finalMin,
-      distance_km: dist,
-      mode: session?.mode || 'city',
-      origin_code: session?.origin?.code || '',
-      dest_code: session?.destination?.code || '',
-      origin_city: session?.origin?.city || '',
-      dest_city: session?.destination?.city || '',
-    });
-  }, [isRealistic, elapsed, totalSeconds, session]);
+
+    if (isAuthenticated) {
+      try {
+        const created = await api.createSession({
+          mode: session?.mode || 'city',
+          sub_mode: session?.subMode || 'classic',
+          origin_city: session?.origin?.city || '',
+          origin_code: session?.origin?.code || '',
+          dest_city: session?.destination?.city || '',
+          dest_code: session?.destination?.code || '',
+          duration_min: finalMin,
+          distance_km: dist,
+          callsign: session?.callsign || '',
+          is_realistic: session?.isRealistic || false,
+        });
+        await api.completeSession(created.id, {
+          duration_min: finalMin,
+          distance_km: dist,
+          status: st,
+        });
+      } catch (err) {
+        console.error('session save failed:', err);
+      }
+    } else {
+      saveLocalSession({
+        status: st,
+        duration_min: finalMin,
+        distance_km: dist,
+        mode: session?.mode || 'city',
+        origin_code: session?.origin?.code || '',
+        dest_code: session?.destination?.code || '',
+        origin_city: session?.origin?.city || '',
+        dest_city: session?.destination?.city || '',
+      });
+    }
+  }, [isAuthenticated, isRealistic, elapsed, totalSeconds, session]);
   saveSessionRef.current = saveSession; // always current, no closure staleness
 
   // ── Sound on mount ──────────────────────────────────────────────
@@ -141,6 +523,40 @@ export function WorkScreen() {
       origin?.lat != null ? fetchWeather(origin.lat, origin.lon).catch(() => null) : Promise.resolve(null),
       destination?.lat != null ? fetchWeather(destination.lat, destination.lon).catch(() => null) : Promise.resolve(null),
     ]).then(([orig, dest]) => setWeather({ origin: orig, dest }));
+  }, []); // eslint-disable-line
+
+  // ── Nearby traffic fetch (OpenSky → route-local fallback) ──
+  useEffect(() => {
+    if (!session) return;
+    const { origin, destination } = session;
+    if (!origin?.lat || !destination?.lat) return;
+
+    const pad = 9;
+    const lamin = Math.min(origin.lat, destination.lat) - pad;
+    const lamax = Math.max(origin.lat, destination.lat) + pad;
+    const lomin = Math.min(origin.lon, destination.lon) - pad;
+    const lomax = Math.max(origin.lon, destination.lon) + pad;
+    const ownIcao = session.flightData?.icao24;
+
+    const fetchTraffic = async () => {
+      try {
+        const url = `https://opensky-network.org/api/states/all?lamin=${lamin}&lomin=${lomin}&lamax=${lamax}&lomax=${lomax}`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (!res.ok) throw new Error('rate-limited');
+        const data = await res.json();
+        const flights = (data.states || [])
+          .map(parseState)
+          .filter(s => s.lat && s.lon && !s.onGround && s.baroAlt > 1000 && s.icao24 !== ownIcao);
+        // If API returned real flights, use them; otherwise keep local fallback
+        if (flights.length > 0) setGhostFlights(flights.slice(0, 50));
+      } catch {
+        // Keep the route-local generated traffic already in state
+      }
+    };
+
+    fetchTraffic();
+    const id = setInterval(fetchTraffic, 90_000);
+    return () => clearInterval(id);
   }, []); // eslint-disable-line
 
 
@@ -307,6 +723,7 @@ export function WorkScreen() {
             mapView={session?.mode === 'live' ? mapView : 'animated'}
             theme={state.theme}
             airlineColor={airline?.color}
+            ghostFlights={ghostFlights}
           />
         </div>
         <motion.div
@@ -352,6 +769,7 @@ export function WorkScreen() {
           mapView={session?.mode === 'live' ? mapView : 'animated'}
           theme={state.theme}
           airlineColor={airline?.color}
+          ghostFlights={ghostFlights}
         />
         {isPaused && !showLandingModal && (
           <motion.div
@@ -366,6 +784,9 @@ export function WorkScreen() {
           </motion.div>
         )}
       </div>
+
+      {/* ── Radar widget ──────────────────────────────────────── */}
+      <RadarWidget session={session} progress={isRealistic ? 0.5 : progress} />
 
       {/* ── Floating top bar ──────────────────────────────────── */}
       <motion.div
@@ -849,7 +1270,181 @@ export function WorkScreen() {
           </div>
         </div>
       )}
+
+      {/* ── Live Chat Panel (only when in a live session) ── */}
+      {state.liveCode && <LiveChatPanel code={state.liveCode} />}
     </div>
+  );
+}
+
+// ─── Floating live chat panel (shown when WorkScreen is inside a live session) ─
+function LiveChatPanel({ code }) {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [unread, setUnread] = useState(0);
+  const [participants, setParticipants] = useState(0);
+  const wsRef = useRef(null);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    const ws = openSessionSocket(code, (msg) => {
+      if (msg.type === 'chat' || msg.type === 'join' || msg.type === 'leave' || msg.type === 'focus_ended') {
+        setMessages(prev => [...prev, msg]);
+        if (msg.type === 'join') setParticipants(n => n + 1);
+        if (msg.type === 'leave') setParticipants(n => Math.max(0, n - 1));
+        setUnread(n => n + 1);
+      }
+    });
+    ws.onopen = () => {};
+    wsRef.current = ws;
+    return () => ws.close();
+  }, [code]);
+
+  useEffect(() => {
+    if (open) {
+      setUnread(0);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    }
+  }, [open, messages]);
+
+  const send = () => {
+    const content = input.trim();
+    if (!content || wsRef.current?.readyState !== WebSocket.OPEN) return;
+    wsRef.current.send(JSON.stringify({ content }));
+    setInput('');
+  };
+
+  return (
+    <>
+      {/* Floating button */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          position: 'absolute', bottom: 'max(80px, calc(80px + env(safe-area-inset-bottom)))',
+          right: 14, zIndex: 950,
+          width: 46, height: 46, borderRadius: '50%', border: 'none',
+          background: open ? '#0096c7' : 'linear-gradient(135deg, #00b4d8, #0077a8)',
+          boxShadow: '0 4px 20px rgba(0,180,216,0.35)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', color: '#fff',
+        }}
+      >
+        {open ? <X size={16} /> : <MessageCircle size={17} />}
+        {!open && unread > 0 && (
+          <div style={{
+            position: 'absolute', top: -3, right: -3,
+            background: '#ef4444', borderRadius: '50%', width: 17, height: 17,
+            fontSize: 9, fontWeight: 800, color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {unread > 9 ? '9+' : unread}
+          </div>
+        )}
+      </button>
+
+      {/* Chat panel */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, x: 40, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 40, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 24, stiffness: 300 }}
+            style={{
+              position: 'absolute',
+              bottom: 'max(140px, calc(140px + env(safe-area-inset-bottom)))',
+              right: 14, zIndex: 940,
+              width: 290,
+              background: 'rgba(8,16,30,0.97)',
+              border: '1px solid rgba(0,180,216,0.2)',
+              borderRadius: 16,
+              display: 'flex', flexDirection: 'column',
+              overflow: 'hidden',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+              maxHeight: '55vh',
+            }}
+          >
+            {/* Panel header */}
+            <div style={{
+              padding: '8px 12px', borderBottom: '1px solid #0d1929',
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'rgba(0,180,216,0.06)',
+              flexShrink: 0,
+            }}>
+              <Users size={12} style={{ color: '#00b4d8' }} />
+              <span style={{ fontSize: 11, color: '#00b4d8', fontWeight: 700, flex: 1 }}>
+                Live Chat · {code.toUpperCase()}
+              </span>
+            </div>
+
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {messages.length === 0 && (
+                <div style={{ textAlign: 'center', color: '#2a3a50', fontSize: 11, paddingTop: 20 }}>
+                  No messages yet ✈️
+                </div>
+              )}
+              {messages.map((msg, i) => {
+                if (msg.type === 'join' || msg.type === 'leave') {
+                  return (
+                    <div key={i} style={{ textAlign: 'center', fontSize: 10, color: '#2a3a50', fontStyle: 'italic' }}>
+                      {msg.type === 'join' ? `${msg.display_name} joined` : `${msg.display_name} left`}
+                    </div>
+                  );
+                }
+                const isOwn = !!user?.id && msg.user_id === user.id;
+                return (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start' }}>
+                    {!isOwn && <span style={{ fontSize: 9, color: '#3a4a60', marginBottom: 1, paddingLeft: 4 }}>{msg.display_name}</span>}
+                    <div style={{
+                      maxWidth: '85%', padding: '6px 10px',
+                      background: isOwn ? 'rgba(0,180,216,0.15)' : '#0C1627',
+                      border: `1px solid ${isOwn ? 'rgba(0,180,216,0.2)' : '#1a2740'}`,
+                      borderRadius: isOwn ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
+                      fontSize: 12, color: isOwn ? '#e0f0ff' : '#c0d0e0',
+                      wordBreak: 'break-word',
+                    }}>
+                      {msg.content}
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Input */}
+            <div style={{ padding: '6px 8px', borderTop: '1px solid #0d1929', display: 'flex', gap: 6, flexShrink: 0 }}>
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                placeholder="Quick message…"
+                style={{
+                  flex: 1, padding: '7px 10px', background: '#0a1220',
+                  border: '1px solid #1a2740', borderRadius: 9,
+                  color: '#fff', fontSize: 12, outline: 'none',
+                }}
+              />
+              <button
+                onClick={send}
+                disabled={!input.trim()}
+                style={{
+                  width: 32, height: 32, borderRadius: 9, border: 'none',
+                  background: input.trim() ? '#00b4d8' : '#1a2740',
+                  cursor: input.trim() ? 'pointer' : 'not-allowed',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                  flexShrink: 0,
+                }}
+              >
+                <Send size={12} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
